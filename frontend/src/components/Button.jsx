@@ -110,3 +110,11 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     </div>
   );
 };
+
+export const Button = ({ children, variant = 'primary', size = 'medium', className = '', ...props }) => {
+  return (
+    <button className={`btn btn-${variant} btn-${size} ${className}`} {...props}>
+      {children}
+    </button>
+  );
+};

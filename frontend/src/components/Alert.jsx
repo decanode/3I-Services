@@ -33,7 +33,7 @@ export default function Alert({
   };
 
   useEffect(() => {
-    if (type !== 'loading' && type !== 'uploading' && type !== 'warning') {
+    if (type !== 'loading' && type !== 'uploading' && type !== 'warning' && type !== 'confirm' && type !== 'success' && type !== 'error') {
       const timer = setTimeout(() => {
         closePopup();
       }, 3000);
@@ -47,6 +47,7 @@ export default function Alert({
       type !== 'loading' &&
       type !== 'uploading' &&
       type !== 'warning' &&
+      type !== 'confirm' &&
       alertCardRef.current &&
       !alertCardRef.current.contains(e.target)
     ) {
@@ -56,6 +57,28 @@ export default function Alert({
 
   return (
     <div className="alert-overlay" onClick={handleOverlayClick}>
+      {/* CONFIRM */}
+      {type === 'confirm' && (
+        <div ref={alertCardRef} className="alert-card alert-card--warning">
+          <div className="alert-warning-bar"></div>
+          <div className="alert-content alert-content--warning">
+            <div className="alert-icon-box alert-icon-box--warning">
+              <AlertTriangle size={36} />
+            </div>
+            <h3 className="alert-title">{title}</h3>
+            <div className="alert-message">{message}</div>
+            <div className="alert-btn-stack">
+              <button onClick={onConfirm} className="alert-btn alert-btn--warning">
+                Yes, Confirm
+              </button>
+              <button onClick={onCancel || closePopup} className="alert-btn alert-btn--ghost">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SUCCESS */}
       {type === 'success' && (
         <div ref={alertCardRef} className="alert-card alert-card--success">
@@ -66,7 +89,7 @@ export default function Alert({
               </div>
             </div>
             <h3 className="alert-title">{title}</h3>
-            <p className="alert-message">{message}</p>
+            <div className="alert-message">{message}</div>
             <button onClick={onConfirm || closePopup} className="alert-btn alert-btn--success">
               Continue
             </button>
@@ -84,7 +107,7 @@ export default function Alert({
               </div>
             </div>
             <h3 className="alert-title">{title}</h3>
-            <p className="alert-message">{message}</p>
+            <div className="alert-message">{message}</div>
             <div className="alert-btn-group">
               <button onClick={onCancel || closePopup} className="alert-btn alert-btn--secondary">
                 Cancel
@@ -171,7 +194,7 @@ export default function Alert({
               </div>
             </div>
             <h3 className="alert-title">{title}</h3>
-            <p className="alert-message alert-message--sm">{message}</p>
+            <div className="alert-message alert-message--sm">{message}</div>
           </div>
         </div>
       )}

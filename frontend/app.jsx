@@ -7,6 +7,7 @@ import ExcelMasterPage from './src/pages/excel-master';
 import ViewPage from './src/pages/view';
 import ViewDataPage from './src/pages/view-master';
 import NotifyPage from './src/pages/view-notify';
+import NotifyDetailPage from './src/pages/view-notify-detail';
 import ViewLogPage from './src/pages/view-log';
 import Dashboard from './src/components/Dashboard';
 
@@ -78,6 +79,15 @@ function App() {
             element={
               <ProtectedRoute activeTab="notify">
                 <NotifyPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/notify-detail"
+            element={
+              <ProtectedRoute activeTab="notify">
+                <NotifyDetailPage />
               </ProtectedRoute>
             }
           />

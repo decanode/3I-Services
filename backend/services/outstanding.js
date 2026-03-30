@@ -124,14 +124,38 @@ class OutstandingService {
         // Store previous values for audit trail
         const previousDebit = ledgerData.debit || 0;
         const previousCredit = ledgerData.credit || 0;
+        const previousDate = ledgerData.lastTransactionDate || '';
+        const previousComments = ledgerData.lastComments || '';
 
         // Parse date format (dd/mm/yyyy to yyyy-mm-dd)
         const parsedDate = parseDateFormat(record.date);
+        
+        const newDebit = parseFloat(record.debit || 0) || 0;
+        const newCredit = parseFloat(record.credit || 0) || 0;
+        const newComments = String(record.comments || '').trim();
+
+        // Avoid duplication: Skip updates if debit, credit, date, and comments are all exactly the same
+        if (
+          previousDebit === newDebit &&
+          previousCredit === newCredit &&
+          previousDate === (parsedDate || '') &&
+          previousComments === newComments
+        ) {
+           // Skip updating this record completely
+           // Add to found since we matched it, but don't count as updated/logged
+           results.found.push({
+             ledger: record.ledger,
+             ledger_id: ledgerId,
+             skipped: true, // Optional marker
+             reason: 'Data unchanged from previous upload'
+           });
+           continue; 
+        }
 
         // Update ledger with new values (REPLACE, not increment)
         const updateData = {
-          debit: parseFloat(record.debit || 0) || 0,
-          credit: parseFloat(record.credit || 0) || 0,
+          debit: newDebit,
+          credit: newCredit,
           group: String(record.group || '').trim() || ledgerData.group,
           lastUpdatedAt: new Date().toISOString(),
           updatedByUserId: userId || null,
@@ -144,7 +168,7 @@ class OutstandingService {
         }
         
         // Always store comments (even if empty)
-        updateData.lastComments = String(record.comments || '').trim();
+        updateData.lastComments = newComments;
 
         await ledgerRef.update(updateData);
 
@@ -155,10 +179,10 @@ class OutstandingService {
           ledger_id: ledgerId,
           ledger_name: ledgerData.ledger_name,
           group: String(record.group || '').trim() || ledgerData.group,
-          debit: parseFloat(record.debit || 0) || 0,
-          credit: parseFloat(record.credit || 0) || 0,
+          debit: newDebit,
+          credit: newCredit,
           date: parsedDate || String(record.date || '').trim(),
-          comments: String(record.comments || '').trim(),
+          comments: newComments,
           previous_debit: previousDebit,
           previous_credit: previousCredit,
           operation: (previousDebit === 0 && previousCredit === 0) ? 'insert' : 'update',
@@ -168,8 +192,8 @@ class OutstandingService {
         results.found.push({
           ledger: record.ledger,
           ledger_id: ledgerId,
-          debit: parseFloat(record.debit || 0) || 0,
-          credit: parseFloat(record.credit || 0) || 0,
+          debit: newDebit,
+          credit: newCredit,
           date: parsedDate || record.date,
           comments: record.comments,
         });

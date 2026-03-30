@@ -1,210 +1,128 @@
-import { useState, useEffect, useMemo } from 'react';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { apiUrl } from '../utils/api';
 import Table from '../components/Table';
 import '../styles/pagestyles/view-notify.css';
 
 export default function NotifyPage() {
-  const [ledgers, setLedgers] = useState([]);
+  const navigate = useNavigate();
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    const loadLedgers = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        const res = await fetch(apiUrl('/api/ledger-remainder?limit=1000'), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-          throw new Error('Failed to load ledger remainder data');
-        }
-
-        const data = await res.json();
-        setLedgers(Array.isArray(data.rows) ? data.rows : []);
-        setError(null);
-      } catch (err) {
-        setError(err.message || 'Failed to load data');
-        setLedgers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadLedgers();
+    fetchRemainders();
   }, []);
 
-  const handleRefresh = async () => {
-    setLoading(true);
+  const fetchRemainders = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(apiUrl('/api/ledger-remainder?limit=1000'), {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(apiUrl('/api/ledger-remainder'), {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      if (!res.ok) throw new Error('Failed to refresh');
-      const data = await res.json();
-      setLedgers(Array.isArray(data.rows) ? data.rows : []);
-      setError(null);
+      if (!res.ok) throw new Error('Failed to fetch ledger remainders');
+      const json = await res.json();
+      setData(json.rows || []);
     } catch (err) {
-      setError(err.message || 'Failed to refresh');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Define columns for the table
-  const columns = useMemo(() => [
-    {
-      key: 'ledger_id',
-      label: 'Ledger ID',
-      width: '120px',
-      align: 'left',
-      render: (item) => <strong style={{ fontFamily: "'Courier New', monospace", fontSize: '0.85rem' }}>{item.ledger_id}</strong>
-    },
-    {
-      key: 'ledger_name',
-      label: 'Ledger Name',
-      width: '250px',
-      align: 'left',
-      render: (item) => <span style={{ fontWeight: 500 }}>{item.ledger_name}</span>
-    },
-    {
-      key: 'city',
-      label: 'City',
-      width: '150px',
-      align: 'left',
-      render: (item) => <span>{item.city || '-'}</span>
-    },
-    {
-      key: 'debit',
-      label: 'Debit',
-      width: '120px',
-      align: 'right',
-      render: (item) => item.debit > 0 
-        ? <span style={{ color: '#166534', fontWeight: 600, fontFamily: "'Courier New', monospace" }}>{item.debit.toFixed(2)}</span>
-        : <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>-</span>
-    },
-    {
-      key: 'credit',
-      label: 'Credit',
-      width: '120px',
-      align: 'right',
-      render: (item) => item.credit > 0 
-        ? <span style={{ color: '#991b1b', fontWeight: 600, fontFamily: "'Courier New', monospace" }}>{item.credit.toFixed(2)}</span>
-        : <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>-</span>
-    },
-    {
-      key: 'lastTransactionDate',
-      label: 'Date',
-      width: '110px',
-      align: 'center',
-      render: (item) => item.lastTransactionDate 
-        ? <span style={{ fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>{item.lastTransactionDate}</span>
-        : <span style={{ color: '#9ca3af' }}>-</span>
-    },
-    {
-      key: 'lastComments',
-      label: 'Comments',
-      width: '250px',
-      align: 'left',
-      render: (item) => item.lastComments 
-        ? <span style={{ fontSize: '0.9rem', color: '#555' }}>{item.lastComments}</span>
-        : <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>-</span>
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let processedData = data.filter(item => {
+    const matchesSearch = (item.ledger_name || '').toLowerCase().includes(search.toLowerCase());
+    
+    // If showAll is toggled, just filter by search and ignore dates entirely
+    if (showAll) {
+      return matchesSearch;
     }
-  ], []);
 
-  // Pagination logic
-  const totalPages = Math.ceil(ledgers.length / rowsPerPage);
-  const currentLedgers = useMemo(() => {
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    return ledgers.slice(startIndex, startIndex + rowsPerPage);
-  }, [ledgers, currentPage, rowsPerPage]);
+    if (!item.lastTransactionDate) return false;
 
-  if (loading) {
-    return (
-      <div className="ledger-page">
-        <div className="ledger-loading">
-          <p>Loading ledger remainder data...</p>
-        </div>
-      </div>
-    );
-  }
+    const itemDate = new Date(item.lastTransactionDate);
+    itemDate.setHours(0, 0, 0, 0);
 
-  if (error) {
-    return (
-      <div className="ledger-page">
-        <p className="ledger-error" role="alert">
-          <AlertCircle size={20} style={{ display: 'inline', marginRight: '8px' }} />
-          {error}
-        </p>
-      </div>
-    );
-  }
+    // Show only ledgers with dates that are today or in the future
+    return matchesSearch && (itemDate >= today);
+  });
+
+  const columns = [
+    { 
+      key: 'ledger_name', 
+      label: 'Ledger Name',
+      render: (row) => {
+        const itemDate = new Date(row.lastTransactionDate);
+        itemDate.setHours(0, 0, 0, 0);
+        const isToday = itemDate.getTime() === today.getTime();
+
+        return (
+          <div className="ledger-name-wrapper">
+            <span>{row.ledger_name}</span>
+            {isToday && <span className="today-badge">Today</span>}
+          </div>
+        );
+      }
+    },
+    { key: 'lastTransactionDate', label: 'Date', render: (row) => row.lastTransactionDate ? row.lastTransactionDate : '-' },
+    { 
+      key: 'lastComments', 
+      label: 'Comments',
+      render: (row) => (
+        <a href="#" className="comment-link" onClick={(e) => {
+          e.preventDefault();
+          navigate('/notify-detail', { state: { row } });
+        }}>
+          {row.lastComments || 'No comments'}
+        </a>
+      )
+    }
+  ];
 
   return (
     <div className="ledger-page">
       <div className="ledger-header">
-        <h2>Ledger Remainder Master</h2>
-        <button onClick={handleRefresh} className="ledger-refresh-btn">
-          <RefreshCw size={18} />
-          Refresh
-        </button>
-      </div>
-
-      <div className="ledger-stats">
-        <div className="stat-card">
-          <span className="stat-label">Total Ledgers</span>
-          <span className="stat-value">{ledgers.length}</span>
+        <h2>Ledger Remainder</h2>
+        <div className="search-card">
+          <div className="search-input-wrapper">
+            <Search className="search-icon" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search by Ledger Name..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          <button 
+            className={`filter-btn ${showAll ? 'active' : ''}`}
+            onClick={() => setShowAll(!showAll)}
+          >
+            {showAll ? 'Show Pending' : 'Show All'}
+          </button>
         </div>
       </div>
 
-      {ledgers.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <AlertCircle size={48} style={{ marginBottom: '16px', color: '#ccc' }} />
-          <p style={{ color: '#999' }}>No ledger remainder records found</p>
-        </div>
-      ) : (
-        <>
-          <Table
-            containerClassName="ledger-table-wrapper"
-            tableClassName="ledger-table-custom"
-            columns={columns}
-            data={currentLedgers}
-            noDataMessage="No records found"
-            minWidth={900}
+      <div className="ledger-content">
+        {loading ? (
+          <p>Loading...</p>
+        ) : error ? (
+          <p className="error">{error}</p>
+        ) : (
+          <Table 
+            columns={columns} 
+            data={processedData} 
+            minWidth={1700}
             striped={true}
-            headerGradient={true}
-            defaultAlign="left"
           />
-
-          {totalPages > 1 && (
-            <div className="ledger-pagination">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="pagination-btn"
-              >
-                Previous
-              </button>
-              <div className="pagination-info">
-                Page {currentPage} of {totalPages} ({ledgers.length} total)
-              </div>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="pagination-btn"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

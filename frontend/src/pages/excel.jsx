@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
-import { Upload, FileUp } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Upload, FileUp, Download, Settings, Trash2, ChevronDown, Check, AlertTriangle } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import Alert from '../components/Alert';
 import { apiUrl } from '../utils/api';
 import '../styles/pagestyles/excel.css';
@@ -10,6 +11,25 @@ export default function ExcelPage() {
   const [uploading, setUploading] = useState(false);
   const [alert, setAlert] = useState(null);
   const [fileType, setFileType] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
 
   const cards = [
     {
@@ -34,6 +54,64 @@ export default function ExcelPage() {
     setActiveCard(cardId);
     setFileType(cardId);
     fileInputRef.current?.click();
+  };
+
+  const handleTemplateDownload = (e, cardId) => {
+    e.stopPropagation(); // Prevent card click event
+
+    let worksheetData = [];
+    let fileName = '';
+    let columnWidths = [];
+
+    if (cardId === 'master') {
+      // Master template headers - all 40 fields as per backend EXCEL_MASTER_FIELDS
+      worksheetData = [
+        [
+          'CODE', 'TYPE', 'LEDGER', 'CITY', 'GROUP', 'NAME',
+          'ADDRESS1', 'ADDRESS2', 'ADDRESS3', 'PIN', 'EMAIL', 'SITE',
+          'CONTACT', 'PHONE1', 'PHONE2', 'MOBILE', 'RESI', 'FAX',
+          'LICENCE', 'TIN', 'STNO', 'PANNO', 'MR', 'AREA',
+          'ROUT', 'TPT', 'TPTDLV', 'BANK', 'BANKADD1', 'BANKADD2',
+          'BRANCH', 'CRDAYS', 'CRAMOUNT', 'LIMITBILL', 'LIMITDAY',
+          'LIMITTYPE', 'FREEZ'
+        ],
+      ];
+      fileName = 'master_template.xlsx';
+      // Set column widths - all columns 15 characters wide
+      columnWidths = worksheetData[0].map(() => ({ wch: 15 }));
+    } else if (cardId === 'outstanding') {
+      // Outstanding template with blank rows 1-3, headers in row 4, data starts row 5
+      worksheetData = [
+        ['', '', '', '', '', ''],  // Row 1: Empty
+        ['', '', '', '', '', ''],  // Row 2: Empty
+        ['', '', '', '', '', ''],  // Row 3: Empty
+        ['SERIAL', 'LEDGER', 'GROUP', 'DEBIT', 'CREDIT', 'COMMENTS'],  // Row 4: Column headers
+      ];
+      fileName = 'outstanding_template.xlsx';
+      // Set specific column widths for outstanding template
+      columnWidths = [
+        { wch: 10 },  // SERIAL - narrow for numbers
+        { wch: 35 },  // LEDGER - wider for ledger names
+        { wch: 30 },  // GROUP
+        { wch: 15 },  // DEBIT
+        { wch: 15 },  // CREDIT
+        { wch: 30 },  // COMMENTS - wider for comments
+      ];
+    }
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Set column widths
+    worksheet['!cols'] = columnWidths;
+
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+
+    // Generate Excel file and trigger download
+    XLSX.writeFile(workbook, fileName);
   };
 
   const handleFileSelect = async (e) => {
@@ -63,7 +141,7 @@ export default function ExcelPage() {
       // Try to parse response as JSON
       let data;
       const contentType = response.headers.get('content-type');
-      
+
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
       } else {
@@ -99,11 +177,16 @@ export default function ExcelPage() {
         setAlert({
           type: 'success',
           title: 'Upload Successful',
-          message:
-            `✓ Processed: ${data.processed} records\n` +
-            `✓ Updated: ${data.updated} ledgers\n` +
-            `✓ Logs created: ${data.logsCreated}` +
-            (notFoundCount > 0 ? `\n⚠ Not found in master: ${notFoundCount}` : ''),
+          message: (
+            <div className="upload-success-stats">
+              <span className="stat-item success-stat"><Check size={16} /> Processed: {data.processed} records</span>
+              <span className="stat-item success-stat"><Check size={16} /> Updated: {data.updated} ledgers</span>
+              <span className="stat-item success-stat"><Check size={16} /> Logs created: {data.logsCreated}</span>
+              {notFoundCount > 0 && (
+                <span className="stat-item warning-stat"><AlertTriangle size={16} /> Not found in master: {notFoundCount}</span>
+              )}
+            </div>
+          ),
           onConfirm: () => {
             setAlert(null);
             setUploading(false);
@@ -146,8 +229,115 @@ export default function ExcelPage() {
     }
   };
 
+  const handleClearData = async (collection) => {
+    const collectionNames = {
+      'master': 'Excel Master Data',
+      'remainder': 'Ledger Remainder',
+      'logs': 'Ledger Logs',
+      'all': 'All Data (Master, Remainder & Logs)'
+    };
+
+    setShowDropdown(false);
+
+    setAlert({
+      type: 'confirm',
+      title: 'Confirm Delete',
+      message: `Are you sure you want to delete ${collectionNames[collection]}? This action cannot be undone.`,
+      onCancel: () => setAlert(null),
+      onConfirm: async () => {
+        setAlert({
+          type: 'uploading',
+          title: 'Deleting',
+          message: `Deleting ${collectionNames[collection]}...`,
+        });
+
+        try {
+          const response = await fetch(apiUrl(`/api/excel/clear/${collection}`), {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data?.message || 'Delete failed');
+          }
+
+          setAlert({
+            type: 'success',
+            title: 'Delete Successful',
+            message: data.message || `${collectionNames[collection]} deleted successfully`,
+            onConfirm: () => setAlert(null),
+          });
+        } catch (error) {
+          console.error('Delete error:', error);
+          setAlert({
+            type: 'error',
+            title: 'Delete Failed',
+            message: error.message || 'An error occurred during deletion',
+            onConfirm: () => setAlert(null),
+          });
+        }
+      },
+    });
+  };
+
   return (
     <div className="excel-page">
+      {/* Database Management Dropdown */}
+      <div className="db-management-container" ref={dropdownRef}>
+        <button
+          className="db-management-btn"
+          onClick={() => setShowDropdown(!showDropdown)}
+          title="Database Management"
+        >
+          <Settings size={20} />
+          <span>Manage Data</span>
+          <ChevronDown size={16} className={showDropdown ? 'rotate' : ''} />
+        </button>
+
+        {showDropdown && (
+          <div className="db-dropdown">
+            <div className="dropdown-header">
+              <Trash2 size={18} />
+              <span>Clear Database Collections</span>
+            </div>
+            <button
+              className="dropdown-item danger"
+              onClick={() => handleClearData('master')}
+            >
+              <Trash2 size={16} />
+              <span>Clear Excel Master</span>
+            </button>
+            <button
+              className="dropdown-item danger"
+              onClick={() => handleClearData('remainder')}
+            >
+              <Trash2 size={16} />
+              <span>Clear Ledger Remainder</span>
+            </button>
+            <button
+              className="dropdown-item danger"
+              onClick={() => handleClearData('logs')}
+            >
+              <Trash2 size={16} />
+              <span>Clear Ledger Logs</span>
+            </button>
+            <div className="dropdown-divider"></div>
+            <button
+              className="dropdown-item danger-high"
+              onClick={() => handleClearData('all')}
+            >
+              <Trash2 size={16} />
+              <span>Clear All Data</span>
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="portal-cards-grid">
         {cards.map((card, index) => {
           const Icon = card.icon;
@@ -165,6 +355,14 @@ export default function ExcelPage() {
                 }
               }}
             >
+              <button
+                className="template-download-btn"
+                onClick={(e) => handleTemplateDownload(e, card.id)}
+                title="Download Template"
+                aria-label={`Download ${card.title} template`}
+              >
+                <Download size={20} />
+              </button>
               <div className="portal-card-icon">
                 <Icon size={40} color={card.color} />
               </div>

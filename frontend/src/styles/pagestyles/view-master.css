@@ -45,7 +45,7 @@
 
 /* Data-dense tweaks on top of Table.css */
 .viewdata-reusable-table {
-  table-layout: fixed;
+  table-layout: auto;
   font-size: 0.95rem;
 }
 
