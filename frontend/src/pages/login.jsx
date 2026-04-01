@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, LogIn, UserPlus, MapPin, Phone, Mail } from 'lucide-react';
+import { User, Lock, LogIn, UserPlus, MapPin, Phone, Mail, Eye, EyeOff, Scale, FileText, Network, Smartphone, Code, Settings, PieChart, Cpu, RadioTower } from 'lucide-react';
 import { Dropdown, cityOptions } from '../components/Button';
 import DatePicker from '../components/datepicker';
 import Alert from '../components/Alert';
@@ -9,32 +9,233 @@ import { apiUrl } from '../utils/api';
 import Masonry from '../components/Masonry';
 import '../styles/pagestyles/login.css';
 
-const loginItems = [
-    { id: "L1", img: "https://picsum.photos/id/1015/800/1000?grayscale", flipImg: "https://picsum.photos/id/1024/800/800?grayscale", url: "#", height: 400, name: "div-l-1" },
-    { id: "L2", img: "https://picsum.photos/id/1011/800/900?grayscale", flipImg: "https://picsum.photos/id/1025/800/1000?grayscale", url: "#", height: 400, name: "div-l-2" },
-    { id: "L3", img: "https://picsum.photos/id/1020/800/1200?grayscale", flipImg: "https://picsum.photos/id/1031/800/900?grayscale", url: "#", height: 400, name: "div-l-3" },
-    { id: "L4", img: "https://picsum.photos/id/1043/800/800?grayscale", flipImg: "https://picsum.photos/id/1032/800/1200?grayscale", url: "#", height: 400, name: "div-l-4" },
-    { id: "L5", img: "https://picsum.photos/id/1035/800/1000?grayscale", flipImg: "https://picsum.photos/id/1033/800/700?grayscale", url: "#", height: 400, name: "div-l-5" },
-    { id: "L6", img: "https://picsum.photos/id/1016/800/700?grayscale", flipImg: "https://picsum.photos/id/1036/800/1100?grayscale", url: "#", height: 400, name: "div-l-6" },
-    { id: "L7", img: "https://picsum.photos/id/1021/800/1100?grayscale", flipImg: "https://picsum.photos/id/1037/800/800?grayscale", url: "#", height: 400, name: "div-l-7" },
-    { id: "L8", img: "https://picsum.photos/id/1022/800/900?grayscale", flipImg: "https://picsum.photos/id/1038/800/1000?grayscale", url: "#", height: 400, name: "div-l-8" },
-    { id: "L9", img: "https://picsum.photos/id/1023/800/800?grayscale", flipImg: "https://picsum.photos/id/1039/800/900?grayscale", url: "#", height: 400, name: "div-l-9" }
+const cardData = [
+  {
+    id: "C1",
+    title: "Regulatory",
+    icon: <Scale size={80} color="#1d4ed8" />,
+    features: [
+      "Licence Compliance Management - SARAS",
+      "Periodic Audit Compliance",
+      "Licence Fee, PBG / FBG & Optimisation Management"
+    ],
+    height: 300
+  },
+  {
+    id: "C2",
+    title: "Licence Management",
+    icon: <FileText size={80} color="#1d4ed8" />,
+    features: [
+      "New Licence Application on SARAL Sanchar",
+      "Licence Renewal",
+      "Periodic Compliance"
+    ],
+    height: 300
+  },
+  {
+    id: "C3",
+    title: "Network Audit",
+    icon: <Network size={80} color="#06b6d4" />,
+    features: [
+      "Network Optimisation",
+      "Network Security"
+    ],
+    height: 300
+  },
+  {
+    id: "C4",
+    title: "Mobile App Development",
+    icon: <Smartphone size={80} color="#3b82f6" />,
+    description: "High-performance apps tailored to your business needs (Android & iOS).",
+    features: [
+      "Cross-platform Solutions",
+      "UI/UX-focused Design",
+      "Secure & Scalable"
+    ],
+    height: 350
+  },
+  {
+    id: "C5",
+    title: "Web Development",
+    icon: <Code size={80} color="#10b981" />,
+    description: "Modern, responsive, and performance-driven websites.",
+    features: [
+      "Corporate & Business Sites",
+      "CMS-based Solutions",
+      "SEO-friendly"
+    ],
+    height: 350
+  },
+  {
+    id: "C6",
+    title: "Custom Software",
+    icon: <Settings size={80} color="#ef4444" />,
+    description: "Customized software solutions aligned with unique workflows.",
+    features: [
+      "Enterprise Development",
+      "Process Automation",
+      "System Integration"
+    ],
+    height: 350
+  },
+  {
+    id: "C7",
+    title: "ERP Software",
+    icon: <PieChart size={80} color="#3b82f6" />,
+    description: "Comprehensive resource planning for various sectors.",
+    tags: ["Hospitality", "Manufacturing", "Schools / Universities", "Attendance & Security"],
+    features: [
+      "Process Optimization",
+      "Real-time Reporting"
+    ],
+    height: 350
+  },  
+  {
+    id: "C8",
+    title: "IoT Based Solutions",
+    icon: <Cpu size={80} color="#0ea5e9" />,
+    description: "Smart connectivity for modern infrastructure.",
+    tags: ["Smart Metering", "Garbage Clearance", "Visitor Management"],
+    features: [
+      "Remote Monitoring",
+      "Data Analytics"
+    ],
+    height: 350
+  },
+  {
+    id: "C9",
+    title: "RFID Solutions",
+    icon: <RadioTower size={80} color="#10b981" />,
+    description: "Advanced tracking and management systems.",
+    tags: ["File Tracking", "Asset Tracking", "Inventory"],
+    features: [
+      "Precision Tracking",
+      "Automated Logging"
+    ],
+    height: 350
+  }
 ];
 
-const signupItems = [
-    { id: "S1", img: "https://picsum.photos/id/1024/800/800?grayscale", flipImg: "https://picsum.photos/id/1015/800/1000?grayscale", url: "#", height: 400, name: "div-s-1" },
-    { id: "S2", img: "https://picsum.photos/id/1025/800/1000?grayscale", flipImg: "https://picsum.photos/id/1011/800/900?grayscale", url: "#", height: 400, name: "div-s-2" },
-    { id: "S3", img: "https://picsum.photos/id/1031/800/900?grayscale", flipImg: "https://picsum.photos/id/1020/800/1200?grayscale", url: "#", height: 400, name: "div-s-3" },
-    { id: "S4", img: "https://picsum.photos/id/1032/800/1200?grayscale", flipImg: "https://picsum.photos/id/1043/800/800?grayscale", url: "#", height: 400, name: "div-s-4" },
-    { id: "S5", img: "https://picsum.photos/id/1033/800/700?grayscale", flipImg: "https://picsum.photos/id/1035/800/1000?grayscale", url: "#", height: 400, name: "div-s-5" },
-    { id: "S6", img: "https://picsum.photos/id/1036/800/1100?grayscale", flipImg: "https://picsum.photos/id/1016/800/700?grayscale", url: "#", height: 400, name: "div-s-6" },
-    { id: "S7", img: "https://picsum.photos/id/1037/800/800?grayscale", flipImg: "https://picsum.photos/id/1021/800/1100?grayscale", url: "#", height: 400, name: "div-s-7" },
-    { id: "S8", img: "https://picsum.photos/id/1038/800/1000?grayscale", flipImg: "https://picsum.photos/id/1022/800/900?grayscale", url: "#", height: 400, name: "div-s-8" },
-    { id: "S9", img: "https://picsum.photos/id/1039/800/900?grayscale", flipImg: "https://picsum.photos/id/1023/800/800?grayscale", url: "#", height: 400, name: "div-s-9" }
-];
+const renderCardFront = (card) => (
+  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', backgroundColor: 'transparent', borderRadius: '12px' }}>
+    <div style={{ marginBottom: '16px', padding: '16px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+      {card.icon}
+    </div>
+    <h1 style={{ fontSize: 'px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', margin: 0 }}>
+      {card.title}
+    </h1>
+  </div>
+);
+
+const renderCardBack = (card) => (
+  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'transparent', color: '#ffffff', borderRadius: '12px', overflowY: 'auto' }}>
+    <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', marginBottom: '12px', borderBottom: '2px solid rgba(255,255,255,0.3)', paddingBottom: '8px' }}>
+      {card.title}
+    </h4>
+    {card.description && (
+      <p style={{ fontSize: '18px', color: '#ffffff', marginBottom: '12px', lineHeight: '1.5' }}>
+        {card.description}
+      </p>
+    )}
+    {card.tags && (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+        {card.tags.map((tag, i) => (
+          <span key={i} style={{ fontSize: '11px', padding: '4px 8px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.3)' }}>
+            {tag}
+          </span>
+        ))}
+      </div>
+    )}
+    <ul style={{ listStyleType: 'none', padding: 0, margin: 0, flexGrow: 1 }}>
+      {card.features.map((feature, i) => (
+        <li key={i} style={{ fontSize: '17px', color: '#ffffff', marginBottom: '8px', display: 'flex', alignItems: 'flex-start' }}>
+          <span style={{ color: '#60a5fa', marginRight: '8px', flexShrink: 0 }}>✓</span>
+          {feature}
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+const loginItems = cardData.map((card, idx) => ({
+  id: card.id,
+  height: card.height,
+  name: `div-c-${idx+1}`,
+  content: renderCardFront(card),
+  flipContent: renderCardBack(card),
+  raw: card
+}));
+
+const signupItems = [...loginItems].reverse();
+
+const AnimatedBackground = ({ items }) => {
+  const [activeIndex, setActiveIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % items.length);
+    }, 5000); // Shift focus every 5 seconds
+    return () => clearInterval(interval);
+  }, [items.length]);
+
+  return (
+    <div className="pattern-container advanced-bg">
+      <div className="blobs-container">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+      </div>
+      <div className="floating-cards-wrapper">
+        {items.map((item, index) => {
+          const isActive = index === activeIndex;
+          
+          // Generate background positions
+          const bgLeft = `${10 + (index * 47) % 65}%`;
+          const bgTop = `${10 + (index * 31) % 65}%`;
+          const animDelay = `${index * -2}s`;
+          
+          return (
+            <div 
+              key={item.id} 
+              className={`floating-card-container ${isActive ? 'active-hero-card' : 'bg-float-card'}`}
+              style={isActive ? {} : { 
+                left: bgLeft, 
+                top: bgTop
+              }}
+            >
+              <div className="card-bobble" style={{ animationDelay: animDelay }}>
+                <div className="glass-card main-glass-card">
+                  {item.content}
+                </div>
+                {/* Automated Popups (Rooted) */}
+                <div className="popup-root popup-1">
+                  <div className="glass-card small-popup">
+                    <h4>{item.raw.title}</h4>
+                    <div style={{fontSize: '11px', opacity: 0.8}}>Focus Module</div>
+                  </div>
+                </div>
+                {item.raw.features && item.raw.features.length > 0 && (
+                  <div className="popup-root popup-2">
+                    <div className="glass-card small-popup">
+                      <ul style={{ padding: 0, margin: 0, listStyle: 'none', fontSize: '11px' }}>
+                        <li>✓ {item.raw.features[0]}</li>
+                        {item.raw.features[1] && <li>✓ {item.raw.features[1]}</li>}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     userId: '',
     password: '',
@@ -348,7 +549,7 @@ export default function LoginPage() {
                   <div className="input-wrapper">
                     <Lock className="form-input-icon" size={20} />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       id="password"
                       name="password"
                       value={formData.password}
@@ -357,6 +558,14 @@ export default function LoginPage() {
                       placeholder="Enter your password"
                       required
                     />
+                    <button
+                      type="button"
+                      className="eye-icon-button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
                   </div>
                 </div>
               </>
@@ -387,41 +596,11 @@ export default function LoginPage() {
       </div>
 
       {/* Right Dark Background with Pattern */}
-      <div className="pattern-container finance-pattern">
-        {isLogin ? (
-          <Masonry
-            key="login-masonry"
-            items={loginItems}
-            ease="power3.out"
-            duration={0.6}
-            stagger={0.05}
-            animateFrom="bottom"
-            scaleOnHover
-            hoverScale={0.95}
-            blurToFocus
-            colorShiftOnHover={false}
-            explicitWidth={true}
-            explicitPosition="absolute"
-            columnCount={3}
-          />
-        ) : (
-          <Masonry
-            key="signup-masonry"
-            items={signupItems}
-            ease="power3.out"
-            duration={0.6}
-            stagger={0.05}
-            animateFrom="top"
-            scaleOnHover
-            hoverScale={0.95}
-            blurToFocus
-            colorShiftOnHover={false}
-            explicitWidth={true}
-            explicitPosition="absolute"
-            columnCount={3}
-          />
-        )}
-      </div>
+      {isLogin ? (
+        <AnimatedBackground items={loginItems} />
+      ) : (
+        <AnimatedBackground items={signupItems} />
+      )}
     </div>
   );
 }

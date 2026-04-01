@@ -111,6 +111,7 @@
   width: 100%;
   padding: 1.25rem 1.5rem;
   padding-left: 3.5rem;
+  padding-right: 3.5rem;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
   font-size: 1.1rem;
@@ -137,6 +138,26 @@
   top: 50%;
   transform: translateY(-50%);
   color: #6b7280;
+}
+
+.eye-icon-button {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.eye-icon-button:hover {
+  color: #2563eb;
 }
 
 .form-group:focus-within .form-input-icon {
@@ -468,3 +489,210 @@
   display: flex;
   flex-direction: column;
 }
+
+/* Elegant Animated Background */
+.advanced-bg {
+  background: #1d305c; /* Deep Professional Blue/Black */
+  position: absolute;
+  top: 0;
+  left: 35%;
+  width: 65%;
+  height: 100vh;
+  z-index: 1;
+  overflow: hidden;
+  transition: transform 0.6s ease-in-out;
+}
+
+.blobs-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  filter: blur(100px);
+  z-index: 0;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: blob-float 20s infinite alternate;
+}
+
+.blob-1 { width: 400px; height: 400px; background: #3b82f6; top: -10%; left: -10%; }
+.blob-2 { width: 500px; height: 500px; background: #8b5cf6; bottom: -20%; right: -10%; animation-delay: -5s; }
+.blob-3 { width: 300px; height: 300px; background: #06b6d4; top: 40%; left: 40%; animation-delay: -10s; }
+
+@keyframes blob-float {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(100px, 50px) scale(1.2); }
+}
+
+/* Floating Blurred Cards */
+.floating-cards-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  perspective: 1000px;
+}
+
+.floating-card-container {
+  position: absolute;
+  width: 320px;
+  transform-style: preserve-3d;
+  /* Ultra-smooth transition for moving in and out simultaneously */
+  transition: all 1.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform-origin: center center;
+}
+
+.card-bobble {
+  animation: roam 20s infinite linear;
+}
+
+@keyframes roam {
+  0%   { transform: translate(0vw, 0vh); }
+  25%  { transform: translate(40vw, -20vh); }
+  50%  { transform: translate(-30vw, 30vh); }
+  75%  { transform: translate(20vw, 40vh); }
+  100% { transform: translate(0vw, 0vh); }
+}
+.blob {
+  animation: blob-roam 25s infinite linear;
+}
+
+/* Active Card showing up */
+.active-hero-card {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) scale(1.15) rotateY(0deg) !important;
+  opacity: 1;
+  filter: blur(0px) drop-shadow(0 0 20px rgba(255, 255, 255, 0.4));
+  z-index: 10;
+}
+/* 🚫 Stop movement for main (active) card */
+.active-hero-card .card-bobble {
+  animation: none !important;
+  transform: translate(0, 0) scale(1) !important;
+  transition: transform 0.8s ease;
+}
+
+.active-hero-card .glass-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(38, 23, 23, 0.4);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.9), 0 0 40px rgba(59, 130, 246, 0.5);
+}
+
+.active-hero-card h1 {
+  text-shadow: 0px 0px 10px rgba(76, 74, 74, 0.6);
+}
+
+/* Background floating cards */
+.bg-float-card {
+  opacity: 0.7; /* Much less transparent */
+  filter: blur(3px) brightness(0.9); /* Subtly blurred so they are visible */
+  z-index: 1;
+}
+.bg-float-card .card-bobble {
+  animation: roam 25s infinite linear;
+  animation-delay: 0.5s; /* ⬅ THIS FIXES SMOOTH EXIT */
+}
+
+.bg-float-card .popup-root {
+  display: none; /* Hide popups for background cards */
+}
+
+/* Glassmorphism Styling */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  color: white;
+  transition: all 0.3s;
+}
+
+/* Fix inner container overrides we had from masonry inline styles */
+.main-glass-card {
+  overflow: hidden;
+}
+.main-glass-card > div {
+  background: transparent !important;
+  color: #fff !important;
+}
+.main-glass-card h1 {
+  color: #fff !important; 
+}
+
+/* Automated Rooted Popups */
+.popup-root {
+  position: absolute;
+  width: max-content;
+  max-width: 240px;
+  opacity: 0;
+  z-index: -1;
+}
+
+/* Connector Lines pseudo-elements coming cleanly from the card */
+.popup-root::before {
+  content: '';
+  position: absolute;
+  height: 2px;
+  width: 60px; /* Clear span from main card */
+  top: 50%;
+  z-index: -2;
+}
+
+.popup-1 {
+  top: 15%;
+  right: 100%; /* Anchor it to the left side of main card */
+  margin-right: 60px; /* Push it further left */
+  animation: popup-reveal-1 10s infinite ease-in-out;
+}
+.popup-1::before {
+  left: 100%; /* Line originates from popup's right side */
+  background: linear-gradient(to right, rgba(255,255,255,0.8), transparent);
+}
+
+.popup-2 {
+  bottom: 15%;
+  left: 100%; /* Anchor it to the right side of main card */
+  margin-left: 60px; /* Push it further right */
+  animation: popup-reveal-2 10s infinite ease-in-out;
+}
+.popup-2::before {
+  right: 100%; /* Line originates from popup's left side */
+  background: linear-gradient(to left, rgba(255,255,255,0.8), transparent);
+}
+
+.small-popup {
+  padding: 0.75rem;
+  border-radius: 12px;
+  color: #e2e8f0;
+}
+.small-popup h4 {
+  color: #fff;
+  margin: 0 0 5px 0;
+  font-size: 13px;
+}
+.small-popup ul {
+  line-height: 1.4;
+}
+
+@keyframes popup-reveal-1 {
+  0% { opacity: 0; transform: translateX(30px) scale(0.9); filter: blur(5px); }
+  20% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+  80% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+  100% { opacity: 0; transform: translateX(30px) scale(0.9); filter: blur(5px); }
+}
+
+@keyframes popup-reveal-2 {
+  0% { opacity: 0; transform: translateX(-30px) scale(0.9); filter: blur(5px); }
+  20% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+  80% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+  100% { opacity: 0; transform: translateX(-30px) scale(0.9); filter: blur(5px); }
+}
+

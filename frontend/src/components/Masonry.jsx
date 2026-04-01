@@ -105,7 +105,7 @@ const Masonry = ({
   };
 
   useEffect(() => {
-    preloadImages(items.map(i => i.img)).then(() => setImagesReady(true));
+    preloadImages(items.map(i => i.img).filter(Boolean)).then(() => setImagesReady(true));
   }, [items]);
 
   const grid = useMemo(() => {
@@ -134,23 +134,6 @@ const Masonry = ({
 
   // Added dynamic flipping interval logic
   const [activeFlips, setActiveFlips] = useState({});
-
-  useEffect(() => {
-    if (!grid.length) return;
-    
-    // Pick a card every 2 seconds to flip 
-    const interval = setInterval(() => {
-      const randomIdx = Math.floor(Math.random() * grid.length);
-      const itemId = grid[randomIdx].id;
-      
-      setActiveFlips(prev => ({
-        ...prev,
-        [itemId]: !prev[itemId] // toggle the flip state for that specific card
-      }));
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [grid]);
 
   useLayoutEffect(() => {
     if (!imagesReady) return;
@@ -201,6 +184,8 @@ const Masonry = ({
     const element = e.currentTarget;
     const selector = `[data-key="${item.id}"]`;
 
+    setActiveFlips(prev => ({ ...prev, [item.id]: true }));
+
     if (scaleOnHover) {
       gsap.to(selector, {
         scale: hoverScale,
@@ -223,6 +208,8 @@ const Masonry = ({
   const handleMouseLeave = (e, item) => {
     const element = e.currentTarget;
     const selector = `[data-key="${item.id}"]`;
+
+    setActiveFlips(prev => ({ ...prev, [item.id]: false }));
 
     if (scaleOnHover) {
       gsap.to(selector, {
@@ -283,19 +270,28 @@ const Masonry = ({
               <div
                 className="item-img"
                 style={{
-                  backgroundImage: `url(${item.img})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
+                  ...(item.img ? {
+                    backgroundImage: `url(${item.img})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                  } : {
+                    backgroundColor: '#ffffff'
+                  }),
                   position: 'absolute',
                   top: 0,
                   left: 0,
                   width: '100%',
                   height: '100%',
                   backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden'
+                  WebkitBackfaceVisibility: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                 }}
               >
+                {item.content}
                 {colorShiftOnHover && (
                   <div className="color-overlay" style={{ /* ... */ }} />
                 )}
@@ -305,10 +301,14 @@ const Masonry = ({
               <div
                 className="item-img"
                 style={{
-                  backgroundImage: `url(${item.flipImg || item.img})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
+                  ...(item.flipImg || item.img ? {
+                    backgroundImage: `url(${item.flipImg || item.img})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                  } : {
+                    backgroundColor: '#ffffff'
+                  }),
                   position: 'absolute',
                   top: 0,
                   left: 0,
@@ -316,9 +316,14 @@ const Masonry = ({
                   height: '100%',
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
-                  transform: 'rotateY(180deg)'
+                  transform: 'rotateY(180deg)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                 }}
               >
+                {item.flipContent}
               </div>
             </div>
           </div>
