@@ -3,9 +3,9 @@ import '../styles/componentstyles/sidebar.css';
 
 const NAV_ITEMS = [
   { id: 'home', icon: Home, label: 'Home' },
-  { id: 'excel', icon: FileSpreadsheet, label: 'Excel' },
+  { id: 'excel', icon: UploadCloud, label: 'Upload Files' },
   { id: 'view', icon: Table2, label: 'View data' },
-  { id: 'notify', icon: UploadCloud, label: 'Update Comments' },
+  { id: 'notify', icon: FileSpreadsheet, label: 'Collection Details' },
 ];
 
 export default function Sidebar({

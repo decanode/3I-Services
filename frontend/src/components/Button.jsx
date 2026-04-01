@@ -118,3 +118,26 @@ export const Button = ({ children, variant = 'primary', size = 'medium', classNa
     </button>
   );
 };
+
+// Gradient Submit Button for Forms
+export const GradientSubmitButton = ({
+  children,
+  icon: Icon,
+  loading = false,
+  loadingText = 'Loading...',
+  disabled = false,
+  className = '',
+  ...props
+}) => {
+  return (
+    <button
+      type="submit"
+      className={`gradient-submit-btn ${className}`}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {Icon && <Icon className="gradient-submit-btn-icon" size={18} />}
+      <span>{loading ? loadingText : children}</span>
+    </button>
+  );
+};

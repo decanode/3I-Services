@@ -88,7 +88,7 @@ export default function NotifyPage() {
   return (
     <div className="ledger-page">
       <div className="ledger-header">
-        <h2>Ledger Remainder</h2>
+        <h2>Collection Details</h2>
         <div className="search-card">
           <div className="search-input-wrapper">
             <Search className="search-icon" size={18} />

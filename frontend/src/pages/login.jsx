@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, LogIn, UserPlus, MapPin, Phone, Mail, Eye, EyeOff, Scale, FileText, Network, Smartphone, Code, Settings, PieChart, Cpu, RadioTower } from 'lucide-react';
-import { Dropdown, cityOptions } from '../components/Button';
+import { User, Lock, LogIn, UserPlus, MapPin, Mail, Eye, EyeOff, Scale, FileText, Network, Smartphone, Code, Settings, PieChart, Cpu, RadioTower, Phone, ArrowLeft, Clock } from 'lucide-react';
+import { Dropdown, cityOptions, GradientSubmitButton } from '../components/Button';
 import DatePicker from '../components/datepicker';
 import Alert from '../components/Alert';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
-import Masonry from '../components/Masonry';
 import '../styles/pagestyles/login.css';
 
 const cardData = [
@@ -116,126 +115,22 @@ const cardData = [
   }
 ];
 
-const renderCardFront = (card) => (
-  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', backgroundColor: 'transparent', borderRadius: '12px' }}>
-    <div style={{ marginBottom: '16px', padding: '16px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
-      {card.icon}
-    </div>
-    <h1 style={{ fontSize: 'px', fontWeight: 'bold', color: '#ffffff', textAlign: 'center', margin: 0 }}>
-      {card.title}
-    </h1>
-  </div>
-);
-
-const renderCardBack = (card) => (
-  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'transparent', color: '#ffffff', borderRadius: '12px', overflowY: 'auto' }}>
-    <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', marginBottom: '12px', borderBottom: '2px solid rgba(255,255,255,0.3)', paddingBottom: '8px' }}>
-      {card.title}
-    </h4>
-    {card.description && (
-      <p style={{ fontSize: '18px', color: '#ffffff', marginBottom: '12px', lineHeight: '1.5' }}>
-        {card.description}
-      </p>
-    )}
-    {card.tags && (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
-        {card.tags.map((tag, i) => (
-          <span key={i} style={{ fontSize: '11px', padding: '4px 8px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.3)' }}>
-            {tag}
-          </span>
-        ))}
-      </div>
-    )}
-    <ul style={{ listStyleType: 'none', padding: 0, margin: 0, flexGrow: 1 }}>
-      {card.features.map((feature, i) => (
-        <li key={i} style={{ fontSize: '17px', color: '#ffffff', marginBottom: '8px', display: 'flex', alignItems: 'flex-start' }}>
-          <span style={{ color: '#60a5fa', marginRight: '8px', flexShrink: 0 }}>✓</span>
-          {feature}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
-
-const loginItems = cardData.map((card, idx) => ({
-  id: card.id,
-  height: card.height,
-  name: `div-c-${idx+1}`,
-  content: renderCardFront(card),
-  flipContent: renderCardBack(card),
-  raw: card
-}));
-
-const signupItems = [...loginItems].reverse();
-
-const AnimatedBackground = ({ items }) => {
-  const [activeIndex, setActiveIndex] = React.useState(0);
-
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % items.length);
-    }, 5000); // Shift focus every 5 seconds
-    return () => clearInterval(interval);
-  }, [items.length]);
-
-  return (
-    <div className="pattern-container advanced-bg">
-      <div className="blobs-container">
-        <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
-        <div className="blob blob-3"></div>
-      </div>
-      <div className="floating-cards-wrapper">
-        {items.map((item, index) => {
-          const isActive = index === activeIndex;
-          
-          // Generate background positions
-          const bgLeft = `${10 + (index * 47) % 65}%`;
-          const bgTop = `${10 + (index * 31) % 65}%`;
-          const animDelay = `${index * -2}s`;
-          
-          return (
-            <div 
-              key={item.id} 
-              className={`floating-card-container ${isActive ? 'active-hero-card' : 'bg-float-card'}`}
-              style={isActive ? {} : { 
-                left: bgLeft, 
-                top: bgTop
-              }}
-            >
-              <div className="card-bobble" style={{ animationDelay: animDelay }}>
-                <div className="glass-card main-glass-card">
-                  {item.content}
-                </div>
-                {/* Automated Popups (Rooted) */}
-                <div className="popup-root popup-1">
-                  <div className="glass-card small-popup">
-                    <h4>{item.raw.title}</h4>
-                    <div style={{fontSize: '11px', opacity: 0.8}}>Focus Module</div>
-                  </div>
-                </div>
-                {item.raw.features && item.raw.features.length > 0 && (
-                  <div className="popup-root popup-2">
-                    <div className="glass-card small-popup">
-                      <ul style={{ padding: 0, margin: 0, listStyle: 'none', fontSize: '11px' }}>
-                        <li>✓ {item.raw.features[0]}</li>
-                        {item.raw.features[1] && <li>✓ {item.raw.features[1]}</li>}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [forgotPasswordStep, setForgotPasswordStep] = useState(1);
+  const [forgotPasswordData, setForgotPasswordData] = useState({
+    email: '',
+    otp: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [forgotPasswordError, setForgotPasswordError] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     userId: '',
     password: '',
@@ -252,6 +147,23 @@ export default function LoginPage() {
   const [alertState, setAlertState] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const OTP_VALID_TIME = 120;
+  const OTP_RESEND_TIME = 60;
+
+  useEffect(() => {
+    if (timer > 0) {
+      const interval = setTimeout(() => setTimer(timer - 1), 1000);
+      return () => clearTimeout(interval);
+    }
+  }, [timer]);
+
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const interval = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(interval);
+    }
+  }, [resendTimer]);
 
   const countryCodes = [
     { code: '+91', country: 'India', countryCode: 'in' },
@@ -332,7 +244,6 @@ export default function LoginPage() {
           message: 'Request sent for admin. Wait for confirmation mail.'
         });
 
-        // Reset form and switch to login view after a delay
         setTimeout(() => {
           setIsLogin(true);
           setFormData({
@@ -365,6 +276,214 @@ export default function LoginPage() {
     setAlertState(null);
   };
 
+  const handleForgotPasswordChange = (e) => {
+    const { name, value } = e.target;
+    setForgotPasswordData(prev => ({
+      ...prev,
+      [name]: name === 'otp' ? value.replace(/\D/g, '').slice(0, 6) : value
+    }));
+  };
+
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    setForgotPasswordError('');
+
+    if (!forgotPasswordData.email.trim()) {
+      setForgotPasswordError('Please enter your email');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotPasswordData.email)) {
+      setForgotPasswordError('Please enter a valid email');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setAlertState({ type: 'loading', title: 'Sending OTP...' });
+
+    try {
+      const res = await fetch(apiUrl('/api/password/send-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotPasswordData.email })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to send OTP');
+
+      setAlertState({
+        type: 'success',
+        title: 'OTP Sent',
+        message: `OTP has been sent to ${forgotPasswordData.email}`
+      });
+
+      setForgotPasswordStep(2);
+      setTimer(OTP_VALID_TIME);
+      setResendTimer(OTP_RESEND_TIME);
+      setForgotPasswordData(prev => ({ ...prev, otp: '' }));
+      setForgotPasswordError('');
+
+      setTimeout(() => setAlertState(null), 3000);
+    } catch (err) {
+      setForgotPasswordError(err.message);
+      setAlertState(null);
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleResendOtp = async (e) => {
+    e.preventDefault();
+    setForgotPasswordError('');
+
+    if (resendTimer > 0) return;
+
+    setForgotPasswordLoading(true);
+    setAlertState({ type: 'loading', title: 'Resending OTP...' });
+
+    try {
+      const res = await fetch(apiUrl('/api/password/resend-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotPasswordData.email })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to resend OTP');
+
+      setAlertState({
+        type: 'success',
+        title: 'OTP Resent',
+        message: 'OTP has been resent to your email'
+      });
+
+      setTimer(OTP_VALID_TIME);
+      setResendTimer(OTP_RESEND_TIME);
+      setForgotPasswordData(prev => ({ ...prev, otp: '' }));
+      setForgotPasswordError('');
+
+      setTimeout(() => setAlertState(null), 3000);
+    } catch (err) {
+      setForgotPasswordError(err.message);
+      setAlertState(null);
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setForgotPasswordError('');
+
+    if (!forgotPasswordData.otp.trim()) {
+      setForgotPasswordError('Please enter the OTP');
+      return;
+    }
+
+    if (forgotPasswordData.otp.length !== 6) {
+      setForgotPasswordError('OTP must be 6 digits');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setAlertState({ type: 'loading', title: 'Verifying OTP...' });
+
+    try {
+      const res = await fetch(apiUrl('/api/password/verify-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotPasswordData.email, otp: forgotPasswordData.otp })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Invalid OTP');
+
+      setAlertState({
+        type: 'success',
+        title: 'OTP Verified',
+        message: 'Proceeding to password reset...'
+      });
+
+      setForgotPasswordStep(3);
+      setForgotPasswordData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+      setForgotPasswordError('');
+
+      setTimeout(() => setAlertState(null), 2000);
+    } catch (err) {
+      setForgotPasswordError(err.message);
+      setAlertState(null);
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setForgotPasswordError('');
+
+    if (!forgotPasswordData.password.trim() || !forgotPasswordData.confirmPassword.trim()) {
+      setForgotPasswordError('Please fill in all password fields');
+      return;
+    }
+
+    if (forgotPasswordData.password.length < 6) {
+      setForgotPasswordError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (forgotPasswordData.password !== forgotPasswordData.confirmPassword) {
+      setForgotPasswordError('Passwords do not match');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setAlertState({ type: 'loading', title: 'Resetting Password...' });
+
+    try {
+      const res = await fetch(apiUrl('/api/password/reset'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: forgotPasswordData.email,
+          otp: forgotPasswordData.otp,
+          newPassword: forgotPasswordData.password
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to reset password');
+
+      setAlertState({
+        type: 'success',
+        title: 'Password Reset Successfully',
+        message: 'You can now login with your new password'
+      });
+
+      setTimeout(() => {
+        setIsForgotPassword(false);
+        setForgotPasswordStep(1);
+        setForgotPasswordData({ email: '', otp: '', password: '', confirmPassword: '' });
+        setForgotPasswordError('');
+        setAlertState(null);
+      }, 3000);
+    } catch (err) {
+      setForgotPasswordError(err.message);
+      setAlertState(null);
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleBackFromForgotPassword = () => {
+    setIsForgotPassword(false);
+    setForgotPasswordStep(1);
+    setForgotPasswordData({ email: '', otp: '', password: '', confirmPassword: '' });
+    setForgotPasswordError('');
+    setTimer(0);
+    setResendTimer(0);
+  };
+
   return (
     <div className={`login-main-container ${!isLogin ? 'signup-active' : ''}`}>
       {alertState && (
@@ -378,229 +497,464 @@ export default function LoginPage() {
       {/* Left White Background - Form Container */}
       <div className="whole-form-container">
         <div className={`form-container ${isLogin ? 'login-mode' : 'signup-mode'}`}>
-          <h1>{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
-          {isLogin && (
-            <p className="form-subtitle">
-              Please sign in to your account
-            </p>
-          )}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+          {!isForgotPassword ? (
+            <>
+              <h1>{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
+              {isLogin && (
+                <p className="form-subtitle">
+                  Please sign in to your account
+                </p>
+              )}
 
-          <form onSubmit={isLogin ? handleLogin : handleSignup}>
-            {!isLogin && (
-              <>
-                <div className="form-row">
-                  {/* First Name Input */}
-                  <div className="form-group">
-                    <label htmlFor="firstName">First Name</label>
-                    <div className="input-wrapper">
-                      <User className="form-input-icon" size={20} />
-                      <input
-                        type="text"
-                        id="firstName"
-                        name="firstName"
-                        value={formData.firstName}
+              <form onSubmit={isLogin ? handleLogin : handleSignup}>
+                {!isLogin && (
+                  <>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="firstName">First Name</label>
+                        <div className="input-wrapper">
+                          <User className="form-input-icon" size={20} />
+                          <input
+                            type="text"
+                            id="firstName"
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleInputChange}
+                            className="form-input"
+                            placeholder="Enter first name"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="lastName">Last Name</label>
+                        <div className="input-wrapper">
+                          <User className="form-input-icon" size={20} />
+                          <input
+                            type="text"
+                            id="lastName"
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleInputChange}
+                            className="form-input"
+                            placeholder="Enter last name"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="fatherName">Father&apos;s name</label>
+                      <div className="input-wrapper">
+                        <User className="form-input-icon" size={20} />
+                        <input
+                          type="text"
+                          id="fatherName"
+                          name="fatherName"
+                          value={formData.fatherName}
+                          onChange={handleInputChange}
+                          className="form-input"
+                          placeholder="Enter father&apos;s full name"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Date of Birth</label>
+                      <DatePicker
+                        name="dob"
+                        value={formData.dob}
+                        onChange={(value) => handleInputChange({ target: { name: 'dob', value } })}
+                        required={true}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <Dropdown
+                        label="City"
+                        name="city"
+                        options={cityOptions}
+                        value={formData.city}
                         onChange={handleInputChange}
-                        className="form-input"
-                        placeholder="Enter first name"
+                        placeholder="Select your city"
+                        icon={MapPin}
                         required
                       />
                     </div>
-                  </div>
 
-                  {/* Last Name Input */}
+                    <div className="form-group">
+                      <label htmlFor="phone">Phone Number</label>
+                      <div className="phone-input-wrapper">
+                        <select
+                          name="countryCode"
+                          value={formData.countryCode}
+                          onChange={handleInputChange}
+                          className="country-code-select"
+                        >
+                          {countryCodes.map((item) => (
+                            <option key={item.code} value={item.code}>
+                              {item.code} {item.country}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          id="phone"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          className="form-input phone-input"
+                          placeholder="Enter your phone number"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="email">Email</label>
+                      <div className="input-wrapper">
+                        <Mail className="form-input-icon" size={20} />
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className="form-input"
+                          placeholder="Enter your email"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {isLogin && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="userId">User ID</label>
+                      <div className="input-wrapper">
+                        <User className="form-input-icon" size={20} />
+                        <input
+                          type="text"
+                          id="userId"
+                          name="userId"
+                          value={formData.userId}
+                          onChange={handleInputChange}
+                          className="form-input"
+                          placeholder="Enter your user ID"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <div className="password-header">
+                        <label htmlFor="password">Password</label>
+                        <button
+                          type="button"
+                          className="forgot-password-link"
+                          onClick={() => setIsForgotPassword(true)}
+                        >
+                          Forgot Password?
+                        </button>
+                      </div>
+                      <div className="input-wrapper">
+                        <Lock className="form-input-icon" size={20} />
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          id="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          className="form-input"
+                          placeholder="Enter your password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="eye-icon-button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {error && <p className="error-message" style={{color: 'red', marginBottom: '1rem'}}>{error}</p>}
+
+                <GradientSubmitButton
+                  icon={LogIn}
+                  loading={!!alertState}
+                  loadingText={isLogin ? 'Logging in...' : 'Creating Account...'}
+                >
+                  {isLogin ? 'Login' : 'Create Account'}
+                </GradientSubmitButton>
+              </form>
+
+              <p className="toggle-text">
+                {isLogin ? "Don't have an account?" : "Already have an account?"}
+                <button
+                  type="button"
+                  className="signup-link"
+                  onClick={() => setIsLogin(!isLogin)}
+                >
+                  <UserPlus size={16} />
+                  {isLogin ? 'Sign up' : 'Log in'}
+                </button>
+              </p>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="back-button"
+                onClick={handleBackFromForgotPassword}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#667eea',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  padding: '0',
+                  marginBottom: '20px',
+                  transition: 'color 0.3s ease'
+                }}
+              >
+                <ArrowLeft size={18} />
+                Back to Login
+              </button>
+
+              <div style={{ marginBottom: '30px', textAlign: 'center' }}>
+                <h1 style={{ fontSize: '24px', color: '#333', margin: '0 0 8px 0', fontWeight: '600' }}>
+                  Forgot Password?
+                </h1>
+                <p style={{ fontSize: '12px', color: '#999', margin: '0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Step {forgotPasswordStep} of 3
+                </p>
+              </div>
+
+              {forgotPasswordStep === 1 && (
+                <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div className="form-group">
-                    <label htmlFor="lastName">Last Name</label>
+                    <label>Email Address</label>
                     <div className="input-wrapper">
-                      <User className="form-input-icon" size={20} />
+                      <Mail className="form-input-icon" size={20} />
                       <input
-                        type="text"
-                        id="lastName"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
+                        type="email"
+                        name="email"
+                        placeholder="Enter your registered email"
+                        value={forgotPasswordData.email}
+                        onChange={handleForgotPasswordChange}
+                        disabled={forgotPasswordLoading}
                         className="form-input"
-                        placeholder="Enter last name"
                         required
                       />
                     </div>
+                    <p style={{ fontSize: '12px', color: '#999', margin: '8px 0 0 0', padding: '0' }}>
+                      We'll send you an OTP to verify your email
+                    </p>
                   </div>
-                </div>
 
-                {/* Father's name (required by API for user ID / password generation) */}
-                <div className="form-group">
-                  <label htmlFor="fatherName">Father&apos;s name</label>
-                  <div className="input-wrapper">
-                    <User className="form-input-icon" size={20} />
-                    <input
-                      type="text"
-                      id="fatherName"
-                      name="fatherName"
-                      value={formData.fatherName}
-                      onChange={handleInputChange}
-                      className="form-input"
-                      placeholder="Enter father&apos;s full name"
-                      required
-                    />
+                  {forgotPasswordError && (
+                    <div style={{ padding: '10px 12px', background: '#fee', border: '1px solid #fcc', borderRadius: '6px', color: '#c33', fontSize: '13px', fontWeight: '500' }}>
+                      {forgotPasswordError}
+                    </div>
+                  )}
+
+                  <GradientSubmitButton
+                    icon={Mail}
+                    loading={forgotPasswordLoading}
+                    loadingText="Sending..."
+                  >
+                    Send OTP
+                  </GradientSubmitButton>
+                </form>
+              )}
+
+              {forgotPasswordStep === 2 && (
+                <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="form-group">
+                    <label>Enter OTP</label>
+                    <p style={{ fontSize: '13px', color: '#666', background: '#f5f5f5', padding: '8px 12px', borderRadius: '6px', margin: '0' }}>
+                      Sent to: <strong style={{ color: '#667eea', fontWeight: '600' }}>{forgotPasswordData.email}</strong>
+                    </p>
+                    <div className="input-wrapper" style={{ marginTop: '8px' }}>
+                      <Lock className="form-input-icon" size={20} />
+                      <input
+                        type="text"
+                        name="otp"
+                        placeholder="Enter 6-digit OTP"
+                        value={forgotPasswordData.otp}
+                        onChange={handleForgotPasswordChange}
+                        disabled={forgotPasswordLoading}
+                        maxLength="6"
+                        className="form-input"
+                        required
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingTop: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#666' }}>
+                        <Clock size={16} style={{ color: '#f97316' }} />
+                        <span>OTP expires in: <strong style={{ color: '#f97316', fontWeight: '600' }}>{timer}s</strong></span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        disabled={resendTimer > 0 || forgotPasswordLoading}
+                        style={{
+                          background: resendTimer > 0 ? '#f0f0f0' : 'none',
+                          border: '1px solid #e0e0e0',
+                          color: resendTimer > 0 ? '#999' : '#667eea',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: resendTimer > 0 ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.3s ease',
+                          opacity: resendTimer > 0 ? 0.6 : 1,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Date of Birth */}
-                <div className="form-group">
-                  <label>Date of Birth</label>
-                  <DatePicker
-                    name="dob"
-                    value={formData.dob}
-                    onChange={(value) => handleInputChange({ target: { name: 'dob', value } })}
-                    required={true}
-                  />
-                </div>
+                  {forgotPasswordError && (
+                    <div style={{ padding: '10px 12px', background: '#fee', border: '1px solid #fcc', borderRadius: '6px', color: '#c33', fontSize: '13px', fontWeight: '500' }}>
+                      {forgotPasswordError}
+                    </div>
+                  )}
 
-                {/* City Dropdown */}
-                <div className="form-group">
-                  <Dropdown
-                    label="City"
-                    name="city"
-                    options={cityOptions}
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    placeholder="Select your city"
-                    icon={MapPin}
-                    required
-                  />
-                </div>
+                  <GradientSubmitButton
+                    icon={Lock}
+                    loading={forgotPasswordLoading}
+                    loadingText="Verifying..."
+                  >
+                    Verify OTP
+                  </GradientSubmitButton>
+                </form>
+              )}
 
-                {/* Phone Number with Country Code */}
-                <div className="form-group">
-                  <label htmlFor="phone">Phone Number</label>
-                  <div className="phone-input-wrapper">
-                    <select
-                      name="countryCode"
-                      value={formData.countryCode}
-                      onChange={handleInputChange}
-                      className="country-code-select"
-                    >
-                      {countryCodes.map((item) => (
-                        <option key={item.code} value={item.code}>
-                          {item.code} {item.country}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="form-input phone-input"
-                      placeholder="Enter your phone number"
-                      required
-                    />
+              {forgotPasswordStep === 3 && (
+                <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="form-group">
+                    <label>New Password</label>
+                    <div className="input-wrapper">
+                      <Lock className="form-input-icon" size={20} />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        placeholder="Enter new password"
+                        value={forgotPasswordData.password}
+                        onChange={handleForgotPasswordChange}
+                        disabled={forgotPasswordLoading}
+                        className="form-input"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={forgotPasswordLoading}
+                        style={{
+                          position: 'absolute',
+                          right: '14px',
+                          background: 'none',
+                          border: 'none',
+                          color: '#999',
+                          cursor: 'pointer',
+                          padding: '4px 8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'color 0.3s ease'
+                        }}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Email */}
-                <div className="form-group">
-                  <label htmlFor="email">Email</label>
-                  <div className="input-wrapper">
-                    <Mail className="form-input-icon" size={20} />
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="form-input"
-                      placeholder="Enter your email"
-                      required
-                    />
+                  <div className="form-group">
+                    <label>Confirm Password</label>
+                    <div className="input-wrapper">
+                      <Lock className="form-input-icon" size={20} />
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        name="confirmPassword"
+                        placeholder="Confirm new password"
+                        value={forgotPasswordData.confirmPassword}
+                        onChange={handleForgotPasswordChange}
+                        disabled={forgotPasswordLoading}
+                        className="form-input"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        disabled={forgotPasswordLoading}
+                        style={{
+                          position: 'absolute',
+                          right: '14px',
+                          background: 'none',
+                          border: 'none',
+                          color: '#999',
+                          cursor: 'pointer',
+                          padding: '4px 8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'color 0.3s ease'
+                        }}
+                      >
+                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#999', margin: '8px 0 0 0', padding: '0' }}>
+                      Password must be at least 6 characters
+                    </p>
                   </div>
-                </div>
-              </>
-            )}
 
-            {isLogin && (
-              <>
-                {/* User ID Input */}
-                <div className="form-group">
-                  <label htmlFor="userId">User ID</label>
-                  <div className="input-wrapper">
-                    <User className="form-input-icon" size={20} />
-                    <input
-                      type="text"
-                      id="userId"
-                      name="userId"
-                      value={formData.userId}
-                      onChange={handleInputChange}
-                      className="form-input"
-                      placeholder="Enter your user ID"
-                      required
-                    />
-                  </div>
-                </div>
+                  {forgotPasswordError && (
+                    <div style={{ padding: '10px 12px', background: '#fee', border: '1px solid #fcc', borderRadius: '6px', color: '#c33', fontSize: '13px', fontWeight: '500' }}>
+                      {forgotPasswordError}
+                    </div>
+                  )}
 
-                {/* Password Input */}
-                <div className="form-group">
-                  <div className="password-header">
-                    <label htmlFor="password">Password</label>
-                    <button type="button" className="forgot-password-link">
-                      Forgot Password?
-                    </button>
-                  </div>
-                  <div className="input-wrapper">
-                    <Lock className="form-input-icon" size={20} />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      id="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="form-input"
-                      placeholder="Enter your password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="eye-icon-button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {error && <p className="error-message" style={{color: 'red', marginBottom: '1rem'}}>{error}</p>}
-
-            {/* Login/Signup Button */}
-            <button type="submit" className="login-button" disabled={!!alertState}>
-              <LogIn size={20} />
-              {isLogin ? 'Login' : 'Create Account'}
-            </button>
-          </form>
-
-          {/* Toggle Link */}
-          <p className="toggle-text">
-            {isLogin ? "Don't have an account?" : "Already have an account?"}
-            <button
-              type="button"
-              className="signup-link"
-              onClick={() => setIsLogin(!isLogin)}
-            >
-              <UserPlus size={16} />
-              {isLogin ? 'Sign up' : 'Log in'}
-            </button>
-          </p>
+                  <GradientSubmitButton
+                    icon={Lock}
+                    loading={forgotPasswordLoading}
+                    loadingText="Resetting..."
+                  >
+                    Reset Password
+                  </GradientSubmitButton>
+                </form>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      {/* Right Dark Background with Pattern */}
-      {isLogin ? (
-        <AnimatedBackground items={loginItems} />
-      ) : (
-        <AnimatedBackground items={signupItems} />
-      )}
+      {/* Right Dark Background - Empty Pattern Only */}
+      <div className="pattern-container advanced-bg">
+        <div className="blobs-container">
+          <div className="blob blob-1"></div>
+          <div className="blob blob-2"></div>
+          <div className="blob blob-3"></div>
+        </div>
+      </div>
     </div>
   );
 }
