@@ -82,10 +82,10 @@ export default function ExcelPage() {
     } else if (cardId === 'outstanding') {
       // Outstanding template with blank rows 1-3, headers in row 4, data starts row 5
       worksheetData = [
-        ['', '', '', '', '', ''],  // Row 1: Empty
-        ['', '', '', '', '', ''],  // Row 2: Empty
-        ['', '', '', '', '', ''],  // Row 3: Empty
-        ['SERIAL', 'LEDGER', 'GROUP', 'DEBIT', 'CREDIT', 'COMMENTS'],  // Row 4: Column headers
+        ['', '', '', '', ''],  // Row 1: Empty
+        ['', '', '', '', ''],  // Row 2: Empty
+        ['', '', '', '', ''],  // Row 3: Empty
+        ['SERIAL', 'LEDGER', 'GROUP', 'DEBIT', 'CREDIT'],  // Row 4: Column headers
       ];
       fileName = 'outstanding_template.xlsx';
       // Set specific column widths for outstanding template
@@ -95,7 +95,6 @@ export default function ExcelPage() {
         { wch: 30 },  // GROUP
         { wch: 15 },  // DEBIT
         { wch: 15 },  // CREDIT
-        { wch: 30 },  // COMMENTS - wider for comments
       ];
     }
 

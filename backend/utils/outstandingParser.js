@@ -78,7 +78,7 @@ function parseOutstandingBuffer(buffer) {
         validRecords: [],
         invalidRecords: [],
         error:
-          'Required columns not found. Excel must contain LEDGER and at least one of: GROUP, DEBIT, CREDIT, DATE, COMMENTS',
+          'Required columns not found. Excel must contain: SERIAL, LEDGER, GROUP, DEBIT, CREDIT',
       };
     }
 

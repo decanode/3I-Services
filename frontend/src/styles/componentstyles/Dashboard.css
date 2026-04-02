@@ -1,4 +1,16 @@
 /* ========== Dashboard Common Layout shell ========== */
+
+/* Local Color Definitions */
+:root {
+  --color-primary-red: #F79B72;
+  --color-secondary-yellow: #DDDDDD;
+  --color-accent-light-green: #EEEEEE;
+  --color-accent-dark-green: #2A4759;
+  --color-neutral-white: #ffffff;
+  --color-neutral-gray-200: #dddddd;
+  --color-neutral-dark: #1a1a1a;
+}
+
 .common-dashboard {
   --sidebar-collapsed-width: 84px;
 
@@ -8,7 +20,7 @@
   max-width: 100%;
   overflow-x: hidden;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color: #0f172a;
+  color: var(--color-neutral-dark);
 }
 
 .common-dashboard-main {
@@ -21,18 +33,16 @@
   min-width: 0;
   max-width: 100%;
 
-  background-color: #f8fafc;
-  background-image: radial-gradient(#b6c4d4 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-position: 0 0;
+  background: linear-gradient(135deg, var(--color-primary-red) 0%, var(--color-secondary-yellow) 25%, var(--color-accent-light-green) 50%, var(--color-accent-dark-green) 100%);
+  background-attachment: fixed;
 }
 
 .mobile-header {
   display: flex;
   align-items: center;
   padding: 1rem;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--color-neutral-white);
+  border-bottom: 1px solid var(--color-neutral-gray-200);
   position: sticky;
   top: 0;
   z-index: 30;
@@ -42,7 +52,7 @@
 .mobile-menu-btn {
   background: none;
   border: none;
-  color: #0f172a;
+  color: var(--color-neutral-dark);
   cursor: pointer;
   padding: 0.25rem;
   margin-right: 1rem;
@@ -55,7 +65,7 @@
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0;
-  color: #AEB784;
+  color: var(--color-accent-dark-green);
 }
 
 @media (max-width: 767px) {

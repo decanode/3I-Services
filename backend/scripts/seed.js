@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { auth } = require('../config/firebase');
-const { generateCredentials } = require('../utils/generator');
+const { generateRandomCredentials } = require('../utils/generator');
+const { sendCredentialsEmail } = require('../utils/mailer');
 const userService = require('../services/user');
 
 async function seedAdmin() {
@@ -59,9 +60,8 @@ async function seedAdmin() {
 
     // Generate credentials
     console.log('[INFO] Generating credentials...');
-    const { generatedUserId, generatedPassword } = generateCredentials(
+    const { generatedUserId, generatedPassword } = generateRandomCredentials(
       firstName,
-      lastName,
       fatherName,
       dob
     );
@@ -96,6 +96,19 @@ async function seedAdmin() {
     console.log(`   User ID: ${generatedUserId}`);
     console.log(`   Password: ${generatedPassword}`);
     console.log(`   Email: ${email}\n`);
+    console.log('[INFO] Sending credentials email...');
+    
+    // Send credentials email to admin
+    await sendCredentialsEmail({
+      email,
+      firstName,
+      userId: generatedUserId,
+      password: generatedPassword
+    }).catch(err => {
+      console.error('[WARNING] Failed to send credentials email:', err.message);
+    });
+    
+    console.log('[SUCCESS] Credentials email sent successfully!\n');
     console.log('[WARNING] Please save these credentials securely!\n');
 
     process.exit(0);

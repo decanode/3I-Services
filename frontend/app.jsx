@@ -9,6 +9,8 @@ import ViewDataPage from './src/pages/view-master';
 import NotifyPage from './src/pages/view-notify';
 import NotifyDetailPage from './src/pages/view-notify-detail';
 import ViewLogPage from './src/pages/view-log';
+import ViewOutstandingsPage from './src/pages/view-outstandings';
+import ViewModifyCallsPage from './src/pages/view-modify-calls';
 import Dashboard from './src/components/Dashboard';
 
 function ProtectedRoute({ children, activeTab }) {
@@ -84,7 +86,7 @@ function App() {
           />
 
           <Route
-            path="/notify-detail"
+            path="/view-notify-detail"
             element={
               <ProtectedRoute activeTab="notify">
                 <NotifyDetailPage />
@@ -97,6 +99,24 @@ function App() {
             element={
               <ProtectedRoute activeTab="view">
                 <ViewLogPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/view-outstandings"
+            element={
+              <ProtectedRoute activeTab="view">
+                <ViewOutstandingsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/modify-calls"
+            element={
+              <ProtectedRoute activeTab="modify-calls">
+                <ViewModifyCallsPage />
               </ProtectedRoute>
             }
           />

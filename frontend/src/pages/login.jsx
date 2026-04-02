@@ -6,6 +6,7 @@ import DatePicker from '../components/datepicker';
 import Alert from '../components/Alert';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
+import '../styles/componentstyles/Button.css';
 import '../styles/pagestyles/login.css';
 
 const cardData = [
@@ -180,10 +181,20 @@ export default function LoginPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Handle phone input - only allow digits, max 10 characters
+    if (name === 'phone') {
+      const phoneValue = value.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({
+        ...prev,
+        [name]: phoneValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleLogin = async (e) => {
@@ -212,6 +223,13 @@ export default function LoginPage() {
   const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Validate phone number
+    if (!formData.phone || formData.phone.length !== 10) {
+      setError('Phone number must be exactly 10 digits');
+      return;
+    }
+
     setAlertState({ type: 'loading', title: 'Sending Request...' });
 
     const startTime = Date.now();
@@ -608,9 +626,13 @@ export default function LoginPage() {
                           onChange={handleInputChange}
                           className="form-input phone-input"
                           placeholder="Enter your phone number"
+                          maxLength="10"
                           required
                         />
                       </div>
+                      <p style={{ fontSize: '12px', color: '#999', margin: '8px 0 0 0', padding: '0' }}>
+                        Phone number must be exactly 10 digits
+                      </p>
                     </div>
 
                     <div className="form-group">

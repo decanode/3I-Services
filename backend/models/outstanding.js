@@ -8,8 +8,6 @@ const OUTSTANDING_FIELDS = [
   'group',
   'debit',
   'credit',
-  'date',
-  'comments',
 ];
 
 const OUTSTANDING_COLLECTION_NAME = 'Outstanding';
@@ -41,15 +39,6 @@ function normalizeOutstandingHeader(header) {
     'credit': 'credit',
     'cr': 'credit',
     'creditamt': 'credit',
-    'date': 'date',
-    'invoicedate': 'date',
-    'transactiondate': 'date',
-    'billdate': 'date',
-    'comments': 'comments',
-    'comment': 'comments',
-    'remarks': 'comments',
-    'notes': 'comments',
-    'description': 'comments',
     'seri': null, // Ignore serial column
     'serial': null,
     'sr': null,
@@ -63,14 +52,12 @@ function normalizeOutstandingHeader(header) {
 /**
  * Create an outstanding entry
  */
-function createOutstandingEntry(ledger, group, debit, credit, date, comments) {
+function createOutstandingEntry(ledger, group, debit, credit) {
   return {
-    ledger: String(ledger || '').trim(),
+    ledger: String(ledger || '').trim().toUpperCase(),
     group: String(group || '').trim(),
     debit: parseFloat(debit || 0) || 0,
     credit: parseFloat(credit || 0) || 0,
-    date: String(date || '').trim(),
-    comments: String(comments || '').trim(),
   };
 }
 
@@ -86,8 +73,6 @@ function parseOutstandingRecords(headerMap, rows) {
       group: '',
       debit: 0,
       credit: 0,
-      date: '',
-      comments: '',
     };
     
     // Map columns using header map
@@ -102,6 +87,8 @@ function parseOutstandingRecords(headerMap, rows) {
       
       if (field === 'debit' || field === 'credit') {
         entry[field] = parseFloat(stringValue) || 0;
+      } else if (field === 'ledger') {
+        entry[field] = stringValue.toUpperCase();
       } else {
         entry[field] = stringValue;
       }

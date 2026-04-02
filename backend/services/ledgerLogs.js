@@ -103,6 +103,37 @@ class LedgerLogsService {
       return [];
     }
   }
+
+  /**
+   * Update log entry with date and comments
+   */
+  async updateLog(logId, updateData) {
+    try {
+      const { dateCalls, lastComments } = updateData;
+      const updates = {};
+      
+      if (dateCalls) updates.date = dateCalls;
+      if (lastComments) updates.lastComments = lastComments;
+      updates.updatedAt = new Date().toISOString();
+      
+      await this.collection.doc(logId).update(updates);
+      
+      const updatedDoc = await this.collection.doc(logId).get();
+      return {
+        success: true,
+        data: {
+          id: updatedDoc.id,
+          ...updatedDoc.data(),
+        },
+      };
+    } catch (error) {
+      console.error('Error updating log:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
 }
 
 module.exports = new LedgerLogsService();

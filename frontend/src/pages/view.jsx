@@ -36,7 +36,7 @@ export default function ViewPage() {
     if (cardId === 'master') {
       navigate('/viewdata');
     } else if (cardId === 'outstanding') {
-      navigate('/notify');
+      navigate('/view-outstandings');
     } else if (cardId === 'log') {
       navigate('/view-log');
     }

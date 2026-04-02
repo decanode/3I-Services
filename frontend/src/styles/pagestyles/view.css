@@ -1,5 +1,18 @@
 /* Landing cards (View page) */
 
+/* Local Color Definitions */
+:root {
+  --color-neutral-light: #f5f5f5;
+  --color-neutral-gray-100: #f0f0f0;
+  --color-neutral-gray-200: #dddddd;
+  --color-neutral-white: #ffffff;
+  --color-secondary-yellow: #DDDDDD;
+  --color-accent-light-green: #EEEEEE;
+  --color-accent-dark-green: #2A4759;
+  --color-neutral-gray-500: #808080;
+  --color-neutral-dark: #1a1a1a;
+}
+
 .portal-cards-grid {
   display: flex;
   flex-wrap: wrap;
@@ -22,8 +35,8 @@
   min-width: 0;
   padding: 2.5rem;
   box-sizing: border-box;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #ffffff 100%);
-  border: 2px solid #e2e8f0;
+  background: linear-gradient(135deg, var(--color-neutral-light) 0%, var(--color-neutral-gray-100) 50%, var(--color-neutral-white) 100%);
+  border: 2px solid var(--color-neutral-gray-200);
   border-radius: 2rem;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
@@ -51,13 +64,13 @@
 }
 
 .portal-card:hover {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 30%, #ffffff 100%);
-  border-color: #3b82f6;
+  background: linear-gradient(135deg, var(--color-secondary-yellow) 0%, var(--color-accent-light-green) 30%, var(--color-neutral-white) 100%);
+  border-color: var(--color-accent-dark-green);
   box-shadow:
-    0 8px 25px rgba(59, 130, 246, 0.15),
-    0 16px 35px rgba(59, 130, 246, 0.1),
-    0 0 0 3px rgba(59, 130, 246, 0.1),
-    0 0 60px rgba(59, 130, 246, 0.05) inset,
+    0 8px 25px rgba(109, 158, 81, 0.15),
+    0 16px 35px rgba(109, 158, 81, 0.1),
+    0 0 0 3px rgba(109, 158, 81, 0.1),
+    0 0 60px rgba(109, 158, 81, 0.05) inset,
     0 0 0 1px rgba(255, 255, 255, 0.8) inset;
   transform: translateY(-12px) scale(1.03);
 }
@@ -65,24 +78,24 @@
 .portal-card:active {
   transform: translateY(-8px) scale(1.01);
   box-shadow:
-    0 4px 15px rgba(59, 130, 246, 0.2),
-    0 8px 20px rgba(59, 130, 246, 0.15),
-    0 0 0 2px rgba(59, 130, 246, 0.2);
+    0 4px 15px rgba(109, 158, 81, 0.2),
+    0 8px 20px rgba(109, 158, 81, 0.15),
+    0 0 0 2px rgba(109, 158, 81, 0.2);
 }
 
 .portal-card:focus-visible {
-  outline: 3px solid #3b82f6;
+  outline: 3px solid var(--color-accent-dark-green);
   outline-offset: 6px;
 }
 
 .portal-card.active {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #f0f9ff 100%);
-  border-color: #2563eb;
+  background: linear-gradient(135deg, var(--color-accent-light-green) 0%, var(--color-secondary-yellow) 50%, var(--color-neutral-light) 100%);
+  border-color: var(--color-accent-dark-green);
   box-shadow:
-    0 8px 25px rgba(37, 99, 235, 0.25),
-    0 16px 35px rgba(37, 99, 235, 0.15),
-    0 0 0 3px rgba(37, 99, 235, 0.15),
-    0 0 80px rgba(37, 99, 235, 0.08) inset;
+    0 8px 25px rgba(109, 158, 81, 0.25),
+    0 16px 35px rgba(109, 158, 81, 0.15),
+    0 0 0 3px rgba(109, 158, 81, 0.15),
+    0 0 80px rgba(109, 158, 81, 0.08) inset;
   transform: translateY(-12px) scale(1.03);
 }
 
@@ -94,7 +107,7 @@
   justify-content: center;
   background: linear-gradient(135deg, #ffffff 0%, #eef2f7 100%);
   border-radius: 1.5rem;
-  color: #64748b;
+  color: var(--color-neutral-gray-500);
   flex-shrink: 0;
   box-shadow:
     0 4px 12px rgba(100, 116, 139, 0.1),
@@ -108,13 +121,13 @@
 }
 
 .portal-card:hover .portal-card-icon {
-  background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 50%, #bfdbfe 100%);
-  color: #2563eb;
+  background: linear-gradient(135deg, var(--color-secondary-yellow) 0%, var(--color-accent-light-green) 50%, var(--color-accent-dark-green) 100%);
+  color: var(--color-neutral-white);
   box-shadow:
-    0 8px 20px rgba(37, 99, 235, 0.2),
-    0 16px 32px rgba(37, 99, 235, 0.15),
-    0 0 0 1px rgba(37, 99, 235, 0.1) inset,
-    0 0 40px rgba(37, 99, 235, 0.08) inset;
+    0 8px 20px rgba(109, 158, 81, 0.2),
+    0 16px 32px rgba(109, 158, 81, 0.15),
+    0 0 0 1px rgba(109, 158, 81, 0.1) inset,
+    0 0 40px rgba(109, 158, 81, 0.08) inset;
   transform: scale(1.08);
 }
 
@@ -128,7 +141,7 @@
   max-width: 17rem;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-neutral-dark);
   letter-spacing: -0.3px;
   text-align: center;
   line-height: 1.25;
@@ -140,7 +153,7 @@
   width: 100%;
   max-width: 17rem;
   font-size: 1.125rem;
-  color: #64748b;
+  color: var(--color-neutral-gray-500);
   line-height: 1.5;
   text-align: center;
   flex-shrink: 1;

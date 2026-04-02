@@ -4,25 +4,17 @@ const LEDGER_REMAINDER_FIELDS = [
   'city',
   'debit',
   'credit',
-  'lastTransactionDate',
+  'nextCallDate',
   'lastComments',
   'lastUpdatedAt',
   'updatedByUserId',
   'sourceFileName',
+  'group',
 ];
 
 const LEDGER_REMAINDER_COLLECTION_NAME = 'Ledger_Remainder';
-/**
- * Create a Ledger_Remainder entry with optional date and comments fields
- * @param {string} ledger_id - Unique ledger identifier
- * @param {string} ledger_name - Full ledger name
- * @param {string} city - City/location
- * @param {number} debit - Debit amount
- * @param {number} credit - Credit amount
- * @param {string} date - Transaction date (YYYY-MM-DD format, optional)
- * @param {string} comments - Transaction comments (optional)
- */
-function createLedgerRemainderEntry(ledger_id, ledger_name, city, debit = 0, credit = 0, date = null, comments = null) {
+
+function createLedgerRemainderEntry(ledger_id, ledger_name, city, debit = 0, credit = 0, nextCallDate = null, comments = null, group = null) {
   const entry = {
     ledger_id: String(ledger_id || '').trim(),
     ledger_name: String(ledger_name || '').trim(),
@@ -31,10 +23,15 @@ function createLedgerRemainderEntry(ledger_id, ledger_name, city, debit = 0, cre
     credit: parseFloat(credit || 0) || 0,
   };
   
-  // Add optional date and comments if provided
-  if (date && String(date).trim()) {
-    entry.lastTransactionDate = String(date).trim();
+  // Add group if provided
+  if (group && String(group).trim()) {
+    entry.group = String(group).trim();
   }
+  
+  // Initialize nextCallDate as empty for user to fill in
+  entry.nextCallDate = nextCallDate && String(nextCallDate).trim() ? String(nextCallDate).trim() : '';
+  
+  // Add optional comments if provided
   if (comments && String(comments).trim()) {
     entry.lastComments = String(comments).trim();
   }
@@ -60,7 +57,12 @@ function extractUniqueLedgerRemainders(records) {
     const entry = createLedgerRemainderEntry(
       record.ledger_id,
       record.ledger,
-      record.city
+      record.city,
+      0,  // debit - initialize to 0
+      0,  // credit - initialize to 0
+      null,  // nextCallDate - initialize as empty for user to populate
+      null,  // comments
+      record.group  // pass group from master record
     );
     
     // Only add if ledger_name exists

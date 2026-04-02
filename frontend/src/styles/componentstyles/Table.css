@@ -1,6 +1,23 @@
 /* Reusable Table Component Styles */
 /* Version 3.0 - Enhanced with Template Mode for SandLab */
 
+/* Local Color Definitions */
+:root {
+  --color-neutral-white: #ffffff;
+  --color-neutral-light: #f5f5f5;
+  --color-neutral-gray-50: #f9fafb;
+  --color-neutral-gray-100: #f0f0f0;
+  --color-neutral-gray-200: #dddddd;
+  --color-neutral-gray-300: #d1d5db;
+  --color-neutral-gray-400: #a8a8a8;
+  --color-neutral-gray-500: #808080;
+  --color-neutral-gray-600: #666666;
+  --color-neutral-gray-700: #4a4a4a;
+  --color-neutral-gray-800: #2a2a2a;
+  --color-neutral-dark: #1a1a1a;
+  --color-accent-dark-green: #2A4759;
+}
+
 /* Table Container */
 .reusable-table-container {
     width: 100%;
@@ -9,7 +26,7 @@
     overflow-x: auto;
     overflow-y: visible;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--color-neutral-gray-200);
     background-color: white;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
@@ -24,25 +41,25 @@
   
   /* Table Header - Default Simple Background */
   .reusable-table thead tr {
-    background: #f1f5f9;
+    background: var(--color-neutral-gray-100);
   }
   
   /* Table Header - Optional Gradient (use .table-gradient-header class) */
   .reusable-table.table-gradient-header thead tr {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: linear-gradient(135deg, var(--color-neutral-light) 0%, var(--color-neutral-gray-100) 100%);
   }
   
   .reusable-table th {
     padding: 0.75rem 1rem;
     text-align: left;
     font-weight: 600;
-    color: #334155;
+    color: var(--color-neutral-gray-700);
     white-space: normal;
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 0.9375rem;
-    border-bottom: 1px solid #e2e8f0;
-    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--color-neutral-gray-200);
+    border-right: 1px solid var(--color-neutral-gray-200);
     vertical-align: middle;
   }
   
@@ -52,27 +69,27 @@
   
   /* Table Body */
   .reusable-table tbody tr {
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--color-neutral-gray-200);
     background-color: white;
     transition: background-color 0.2s ease;
   }
   
   .reusable-table tbody tr:hover {
-    background-color: #f8fafc;
+    background-color: var(--color-neutral-light);
   }
   
   /* Optional Striped Rows (use .table-striped class) */
   .reusable-table.table-striped tbody tr:nth-child(even) {
-    background-color: #f9fafb;
+    background-color: var(--color-neutral-gray-50);
   }
   
   .reusable-table.table-striped tbody tr:nth-child(even):hover {
-    background-color: #f1f5f9;
+    background-color: var(--color-neutral-gray-100);
   }
   
   .reusable-table td {
     padding: 0.75rem 1rem;
-    color: #475569;
+    color: var(--color-neutral-gray-600);
     text-align: center;
     vertical-align: middle;
     font-size: 0.9375rem;
@@ -90,7 +107,7 @@
   .reusable-table-no-records {
     padding: 3rem;
     text-align: center;
-    color: #94a3b8;
+    color: var(--color-neutral-gray-400);
     font-style: italic;
     font-size: 0.9375rem;
   }
@@ -133,12 +150,12 @@
   /* Bordered Mode - All borders visible */
   .reusable-table.table-bordered th,
   .reusable-table.table-bordered td {
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--color-neutral-gray-200);
   }
   
   .reusable-table.table-bordered th:last-child,
   .reusable-table.table-bordered td:last-child {
-    border-right: 1px solid #e2e8f0;
+    border-right: 1px solid var(--color-neutral-gray-200);
   }
   
   /* Compact Mode */
@@ -151,24 +168,24 @@
   .reusable-table.table-template input {
     width: 100%;
     padding: 0.5rem 0.625rem;
-    border: 1.5px solid #cbd5e1;
+    border: 1.5px solid var(--color-neutral-gray-300);
     border-radius: 6px;
     font-size: 0.875rem;
     font-family: inherit;
-    color: #1e293b;
-    background-color: #ffffff;
+    color: var(--color-neutral-gray-800);
+    background-color: var(--color-neutral-white);
     transition: all 0.2s ease;
     box-sizing: border-box;
   }
   
   .reusable-table.table-template input:focus {
     outline: none;
-    border-color: #5B9AA9;
+    border-color: var(--color-accent-dark-green);
     box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
   }
   
   .reusable-table.table-template input::placeholder {
-    color: #94a3b8;
+    color: var(--color-neutral-gray-400);
   }
   
   .reusable-table.table-template input[type="number"] {

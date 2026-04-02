@@ -61,12 +61,20 @@ function pickMasterFields(row) {
   for (const k of EXCEL_MASTER_FIELDS) {
     if (row[k] == null || row[k] === '') continue;
     const v = row[k];
+    let fieldValue = '';
     if (typeof v === 'number' && !Number.isNaN(v)) {
-      out[k] = String(v);
+      fieldValue = String(v);
     } else if (v instanceof Date) {
-      out[k] = v.toISOString().slice(0, 10);
+      fieldValue = v.toISOString().slice(0, 10);
     } else {
-      out[k] = String(v).trim();
+      fieldValue = String(v).trim();
+    }
+    
+    // Convert ledger field to uppercase to act as primary key
+    if (k === 'ledger') {
+      out[k] = fieldValue.toUpperCase();
+    } else {
+      out[k] = fieldValue;
     }
   }
   return out;
@@ -76,10 +84,10 @@ function isRowEmpty(record) {
   return EXCEL_MASTER_FIELDS.every((k) => !record[k]);
 }
 
-/** Generate ledger_id from ledger field by removing spaces */
+/** Generate ledger_id from ledger field by removing spaces and converting to uppercase */
 function generateLedgerId(ledger) {
   if (!ledger || typeof ledger !== 'string') return '';
-  return ledger.trim().replace(/\s+/g, '');
+  return ledger.trim().replace(/\s+/g, '').toUpperCase();
 }
 
 module.exports = {

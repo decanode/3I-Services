@@ -48,3 +48,40 @@ exports.getByLedgerId = async (req, res) => {
     });
   }
 };
+
+/**
+ * Update log entry with date and comments
+ */
+exports.update = async (req, res) => {
+  try {
+    const { logId } = req.params;
+    const { dateCalls, lastComments } = req.body;
+
+    if (!logId) {
+      return res.status(400).json({ message: 'logId is required' });
+    }
+
+    const result = await ledgerLogsService.updateLog(logId, {
+      dateCalls,
+      lastComments,
+    });
+
+    if (!result.success) {
+      return res.status(500).json({
+        message: 'Failed to update log',
+        error: result.error,
+      });
+    }
+
+    res.json({
+      message: 'Log updated successfully',
+      data: result.data,
+    });
+  } catch (error) {
+    console.error('Error updating log:', error);
+    res.status(500).json({
+      message: 'Failed to update log',
+      error: error.message,
+    });
+  }
+};

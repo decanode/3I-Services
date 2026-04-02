@@ -18,8 +18,6 @@ const DatePicker = ({ value, onChange, required = false, disabled = false }) => 
     if (value) {
       const [year, month, day] = value.split('-');
       setSelectedDate(new Date(year, month - 1, day));
-      setCurrentMonth(parseInt(month) - 1);
-      setCurrentYear(parseInt(year));
     }
   }, [value]);
 
@@ -73,9 +71,6 @@ const DatePicker = ({ value, onChange, required = false, disabled = false }) => 
 
   const handleDateSelect = (date) => {
     if (!date) return;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (date > today) return;
 
     setSelectedDate(date);
     const year = date.getFullYear();
@@ -153,7 +148,7 @@ const DatePicker = ({ value, onChange, required = false, disabled = false }) => 
         onClick={() => {
           if (!disabled) {
             setShowCalendar(true);
-            setShowYearPicker(true);
+            setShowYearPicker(false);
             setShowMonthPicker(false);
           }
         }}
@@ -174,7 +169,7 @@ const DatePicker = ({ value, onChange, required = false, disabled = false }) => 
             if (!disabled) {
               setShowCalendar(!showCalendar);
               if (!showCalendar) {
-                setShowYearPicker(true);
+                setShowYearPicker(false);
                 setShowMonthPicker(false);
               }
             }
@@ -285,8 +280,8 @@ const DatePicker = ({ value, onChange, required = false, disabled = false }) => 
               <table className="calendar-grid">
                 <thead>
                   <tr>
-                    {dayNames.map((day) => (
-                      <th key={day}>{day}</th>
+                    {dayNames.map((day, index) => (
+                      <th key={index}>{day}</th>
                     ))}
                   </tr>
                 </thead>
@@ -302,10 +297,10 @@ const DatePicker = ({ value, onChange, required = false, disabled = false }) => 
                               type="button"
                               role="gridcell"
                               onClick={() => handleDateSelect(date)}
-                              disabled={isOutside || isFutureDate(date)}
+                              disabled={isOutside}
                               data-selected={isSelected(date)}
                               data-today={isToday(date)}
-                              data-disabled={isOutside || isFutureDate(date)}
+                              data-disabled={isOutside}
                               data-outside-month={isOutside}
                             >
                               {date ? date.getDate() : ''}

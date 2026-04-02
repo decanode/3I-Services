@@ -1,6 +1,6 @@
 const { auth } = require('../config/firebase');
 const { sendEmailToAdmin, sendCredentialsEmail } = require('../utils/mailer');
-const { generateCredentials } = require('../utils/generator');
+const { generateRandomCredentials } = require('../utils/generator');
 const registrationService = require('../services/registration');
 const userService = require('../services/user');
 
@@ -11,6 +11,14 @@ exports.register = async (req, res) => {
 
     if (!firstName || !lastName || !email || !dob || !fatherName) {
       return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Validate phone number - must be exactly 10 digits
+    if (phone) {
+      const phoneString = phone.toString().trim();
+      if (!/^\d{10}$/.test(phoneString)) {
+        return res.status(400).json({ message: 'Phone number must be exactly 10 digits' });
+      }
     }
 
     // Check for existing phone number
@@ -50,13 +58,34 @@ exports.register = async (req, res) => {
     }
 
     // Create request
+    console.log('[INFO] Creating registration request...');
     const newRequest = await registrationService.createRequest({ firstName, lastName, fatherName, dob, email, phone: phone || '', city: city || '' });
+    console.log('[SUCCESS] Registration request created with ID:', newRequest.id);
 
-    // Notify admin
-    sendEmailToAdmin({ requestId: newRequest.id, firstName, lastName, email }).catch(() => {});
+    // Notify admin (fire and forget with error logging)
+    console.log('[INFO] Sending admin notification...');
+    console.log('[DEBUG] Admin email recipient:', process.env.ADMIN_EMAIL);
+    console.log('[DEBUG] Calling sendEmailToAdmin with:', { requestId: newRequest.id, firstName, lastName, email, phone, city });
+    
+    sendEmailToAdmin({ 
+      requestId: newRequest.id, 
+      firstName, 
+      lastName, 
+      email, 
+      phone: phone || '',
+      city: city || ''
+    }).then(() => {
+      console.log('[SUCCESS] Admin notification completed for request:', newRequest.id);
+    }).catch((err) => {
+      console.error('[ERROR] Admin notification failed for request:', newRequest.id);
+      console.error('[ERROR] Error details:', err.message);
+    });
 
+    console.log('[SUCCESS] Registration response sent to user');
     res.status(201).json({ message: 'Registration submitted', requestId: newRequest.id });
   } catch (error) {
+    console.error('[ERROR] Registration error:', error.message);
+    console.error('[ERROR] Stack trace:', error.stack);
     res.status(500).json({ error: error.message });
   }
 };
@@ -94,7 +123,7 @@ exports.approve = async (req, res) => {
     const existingUser = await userService.findByEmail(request.email);
     if (existingUser) return res.status(409).json({ message: 'User already exists' });
 
-    const { generatedUserId, generatedPassword } = generateCredentials(request.firstName, request.lastName, request.fatherName, request.dob);
+    const { generatedUserId, generatedPassword } = generateRandomCredentials(request.firstName, request.fatherName, request.dob);
 
     // Create Firebase Auth user
     await auth.createUser({ email: request.email, password: generatedPassword });

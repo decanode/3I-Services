@@ -1,5 +1,6 @@
 import { Home, FileSpreadsheet, Table2, LogOut, UploadCloud } from 'lucide-react';
 import '../styles/componentstyles/sidebar.css';
+import threeiLogo from '../images/3iLogo.jpg';
 
 const NAV_ITEMS = [
   { id: 'home', icon: Home, label: 'Home' },
@@ -35,9 +36,11 @@ export default function Sidebar({
             role="button"
             tabIndex={0}
           >
-            <div className="sidebar__brand-icon">
-              <FileSpreadsheet size={22} />
-            </div>
+            <img 
+              src={threeiLogo} 
+              alt="3i Services Logo"
+              className="sidebar__brand-logo"
+            />
             <span className="sidebar__logo-text">{logoTitle}</span>
           </div>
         </div>

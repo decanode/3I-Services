@@ -4,6 +4,7 @@ import { Users, UserPlus, Clock, Mail, Check, X, Trash2, IdCard, Shield, User as
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
 import Alert from '../components/Alert';
+import { RemainderCard } from './Remainder';
 import '../styles/pagestyles/home.css';
 
 function formatRequestDate(iso) {
@@ -24,7 +25,7 @@ function initials(first, last) {
   return (a + b).toUpperCase() || '?';
 }
 
-function AdminDashboard() {
+function AdminDashboard({ isEmployeeCardExpanded, setIsEmployeeCardExpanded }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -232,7 +233,8 @@ function AdminDashboard() {
 
       {data && (
         <>
-          <section className="admin-dash__panel">
+          {/* Employee Management Panel */}
+          <section className={`admin-dash__panel ${isEmployeeCardExpanded ? 'admin-dash__panel--visible' : 'admin-dash__panel--hidden'}`}>
             <div className="admin-dash__panel-head">
               <div className="admin-dash__toggle">
                 <button
@@ -404,6 +406,11 @@ function AdminDashboard() {
               </div>
             )}
           </section>
+
+          {/* Upcoming Calls Card */}
+          <div className="admin-dash__upcoming-section">
+            <RemainderCard />
+          </div>
         </>
       )}
     </div>
@@ -413,11 +420,16 @@ function AdminDashboard() {
 function EmployeeHome({ user }) {
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.userId || 'there';
   return (
-    <div className="home-welcome-employee">
-      <div className="home-welcome-employee__card">
-        <h1 className="home-welcome-employee__title">Welcome back</h1>
-        <p className="home-welcome-employee__name">{name}</p>
-        <p className="home-welcome-employee__hint">Use the sidebar to open Excel tools or view data.</p>
+    <div className="home-employee-section">
+      <div className="home-employee-section__welcome">
+        <div className="home-welcome-employee__card">
+          <h1 className="home-welcome-employee__title">Welcome back</h1>
+          <p className="home-welcome-employee__name">{name}</p>
+          <p className="home-welcome-employee__hint">Use the sidebar to open Excel tools or view data.</p>
+        </div>
+      </div>
+      <div className="home-employee-section__upcoming">
+        <RemainderCard />
       </div>
     </div>
   );
@@ -426,65 +438,102 @@ function EmployeeHome({ user }) {
 export default function HomePage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const [isEmployeeCardExpanded, setIsEmployeeCardExpanded] = useState(false);
+
   return (
     <div className={`home-page-container`}>
-      <UserGreetingBanner user={user} />
-      {isAdmin ? <AdminDashboard /> : <EmployeeHome user={user} />}
+      <UserGreetingBanner 
+        user={user} 
+        onEmployeeCardClick={() => setIsEmployeeCardExpanded(!isEmployeeCardExpanded)}
+        isEmployeeCardExpanded={isEmployeeCardExpanded}
+      />
+      {isAdmin ? (
+        <AdminDashboard 
+          isEmployeeCardExpanded={isEmployeeCardExpanded}
+          setIsEmployeeCardExpanded={setIsEmployeeCardExpanded}
+        />
+      ) : (
+        <EmployeeHome user={user} />
+      )}
     </div>
   );
 }
 
-function UserGreetingBanner({ user }) {
+function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded }) {
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';
   const role = user?.role || 'Employee';
   const idValue = user?.empId || user?.userId || 'N/A';
-  
+  const city = user?.city || 'Not Set';
+  const isAdmin = user?.role === 'admin';
+
   const hour = new Date().getHours();
   let greeting = 'Good evening';
   if (hour < 12) greeting = 'Good morning';
   else if (hour < 18) greeting = 'Good afternoon';
 
-  const workflows = [
-    { label: 'System Check', value: 'All Optimal', icon: Activity, color: 'text-blue', bg: 'bg-blue-light' },
-    { label: 'Pending Docs', value: '3 Awaiting', icon: Clock, color: 'text-orange', bg: 'bg-orange-light' },
-    { label: 'Data Sync', value: 'Up to date', icon: Check, color: 'text-green', bg: 'bg-green-light' },
-  ];
-  const [flowIdx, setFlowIdx] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFlowIdx((prev) => (prev + 1) % workflows.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [workflows.length]);
-
-  const CurrentFlow = workflows[flowIdx];
-
   return (
     <div className="user-greeting-banner">
-      <div className="user-greeting__top-row">
-        <div className="user-greeting__profile">
-          <h1 className="user-greeting__title">{greeting}, {name}!</h1>
-          <div className="user-greeting__badges">
-            <span className="user-greeting__badge">
-              <IdCard size={14} /> ID: {idValue}
-            </span>
-            <span className="user-greeting__badge" style={{ textTransform: 'capitalize' }}>
-              <Shield size={14} /> {role}
-            </span>
-          </div>
+      {/* Top Row - Greeting Sentence */}
+      <div className="user-greeting-sentence">
+        <div className="user-greeting-sentence__icon">
+          <UserIcon size={32} />
+        </div>
+        <div className="user-greeting-sentence__text">
+          <h1 className="user-greeting-sentence__value">{greeting}, <span className="user-greeting-sentence__name">{name}</span>!</h1>
+          <p className="user-greeting-sentence__role">You are logged in as <span>{role}</span></p>
         </div>
       </div>
-      
-      <div className="user-greeting__stats">
-        {role !== 'admin' && (
-          <div className="user-greeting__stat">
-            <div className="user-greeting__stat-icon bg-blue-light">
-              <MapPin size={18} className="text-blue" />
+
+      {/* Bottom Row - Detail Cards Grid */}
+      <div className="user-greeting-cards-grid">
+        {/* City Card */}
+        <div className="user-greeting-card user-greeting-card--city">
+          <div className="user-greeting-card__icon">
+            <MapPin size={24} />
+          </div>
+          <div className="user-greeting-card__content">
+            <div className="user-greeting-card__label">City</div>
+            <div className="user-greeting-card__value">{city}</div>
+          </div>
+        </div>
+
+        {/* ID Card */}
+        <div className="user-greeting-card user-greeting-card--id">
+          <div className="user-greeting-card__icon">
+            <IdCard size={24} />
+          </div>
+          <div className="user-greeting-card__content">
+            <div className="user-greeting-card__label">Employee ID</div>
+            <div className="user-greeting-card__value">{idValue}</div>
+          </div>
+        </div>
+
+        {/* Role Card */}
+        <div className="user-greeting-card user-greeting-card--role">
+          <div className="user-greeting-card__icon">
+            <Shield size={24} />
+          </div>
+          <div className="user-greeting-card__content">
+            <div className="user-greeting-card__label">Role</div>
+            <div className="user-greeting-card__value" style={{ textTransform: 'capitalize' }}>{role}</div>
+          </div>
+        </div>
+
+        {/* Admin Employee Management Card */}
+        {isAdmin && (
+          <div 
+            className={`user-greeting-card user-greeting-card--employees ${isEmployeeCardExpanded ? 'user-greeting-card--employees-active' : ''}`}
+            onClick={onEmployeeCardClick}
+            role="button"
+            tabIndex={0}
+            onKeyPress={(e) => e.key === 'Enter' && onEmployeeCardClick()}
+          >
+            <div className="user-greeting-card__icon">
+              <Users size={24} />
             </div>
-            <div className="user-greeting__stat-text">
-              <p className="user-greeting__stat-val">{user?.location || 'Not Set'}</p>
-              <p className="user-greeting__stat-lbl">Location</p>
+            <div className="user-greeting-card__content">
+              <div className="user-greeting-card__label">Manage</div>
+              <div className="user-greeting-card__value">Employees</div>
             </div>
           </div>
         )}

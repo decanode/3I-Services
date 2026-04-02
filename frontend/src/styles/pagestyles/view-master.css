@@ -1,4 +1,11 @@
 .viewdata-page {
+  /* Local Color Definitions */
+  --color-secondary-yellow: #DDDDDD;
+  --color-neutral-dark: #1a1a1a;
+  --color-accent-light-green: #EEEEEE;
+  --color-neutral-gray-100: #f0f0f0;
+  --color-neutral-gray-200: #dddddd;
+
   flex: 1;
   height: 100vh;
   max-height: 100vh;
@@ -15,8 +22,8 @@
   margin: 1rem;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
-  background: #fef2f2;
-  color: #b91c1c;
+  background: var(--color-secondary-yellow);
+  color: var(--color-neutral-dark);
   font-size: 0.875rem;
 }
 
@@ -37,8 +44,8 @@
   min-width: 0;
   width: 100%;
   overflow: auto;
-  border-color: #d1fae5;
-  box-shadow: 0 1px 3px rgba(16, 124, 65, 0.08);
+  border-color: var(--color-accent-light-green);
+  box-shadow: 0 1px 3px rgba(109, 158, 81, 0.08);
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
@@ -54,14 +61,14 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #f1f5f9;
-  box-shadow: 0 1px 0 #e2e8f0;
+  background: var(--color-neutral-gray-100);
+  box-shadow: 0 1px 0 var(--color-neutral-gray-200);
   font-size: 1.05rem;
   padding: 1.29rem 1rem;
 }
 
 .viewdata-reusable-table.table-gradient-header thead tr {
-  background: linear-gradient(135deg, #ecfdf5 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, var(--color-accent-light-green) 0%, var(--color-neutral-gray-100) 100%);
 }
 
 .viewdata-reusable-table.table-gradient-header th {
@@ -70,7 +77,7 @@
 
 .viewdata-reusable-table td {
   white-space: nowrap;
-  color: #1e293b;
+  color: var(--color-neutral-dark);
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 1.29rem 1rem;

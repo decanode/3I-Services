@@ -1,126 +1,139 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
 import { apiUrl } from '../utils/api';
 import Table from '../components/Table';
 import '../styles/pagestyles/view-notify.css';
 
 export default function NotifyPage() {
-  const navigate = useNavigate();
-  const [data, setData] = useState([]);
+  const [ledgers, setLedgers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const [showAll, setShowAll] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchRemainders();
-  }, []);
-
-  const fetchRemainders = async () => {
+  const fetchLedgerRemainders = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(apiUrl('/api/ledger-remainder'), {
-        headers: { Authorization: `Bearer ${token}` }
+      if (!token) {
+        setError('Not logged in.');
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch(apiUrl('/api/ledger-remainder?limit=500'), {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Failed to fetch ledger remainders');
-      const json = await res.json();
-      setData(json.rows || []);
+
+      if (!res.ok) {
+        throw new Error('Failed to load ledger remainders');
+      }
+
+      const data = await res.json();
+      const sortedLedgers = (Array.isArray(data.rows) ? data.rows : []).sort(
+        (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
+      );
+      setLedgers(sortedLedgers);
+      setError(null);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to load data');
+      setLedgers([]);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchLedgerRemainders();
+  }, [fetchLedgerRemainders]);
+
+  const columns = useMemo(() => [
+    {
+      key: 'ledger_name',
+      label: 'Ledger Name',
+      width: '300px',
+      align: 'center',
+    },
+    {
+      key: 'nextCallDate',
+      label: 'Date',
+      width: '150px',
+      align: 'center',
+      render: (value) => {
+        if (!value) return '—';
+        try {
+          const date = new Date(value);
+          return date.toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          });
+        } catch {
+          return value;
+        }
+      },
+    },
+    {
+      key: 'lastComments',
+      label: 'Comments',
+      width: '400px',
+      align: 'center',
+      render: (value) => {
+        if (!value) return '—';
+        return value.length > 50 ? value.substring(0, 50) + '...' : value;
+      },
+    },
+  ], []);
+
+  const handleRowClick = (ledger) => {
+    navigate('/view-notify-detail', { state: { row: ledger } });
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  let processedData = data.filter(item => {
-    const matchesSearch = (item.ledger_name || '').toLowerCase().includes(search.toLowerCase());
-    
-    // If showAll is toggled, just filter by search and ignore dates entirely
-    if (showAll) {
-      return matchesSearch;
-    }
-
-    if (!item.lastTransactionDate) return false;
-
-    const itemDate = new Date(item.lastTransactionDate);
-    itemDate.setHours(0, 0, 0, 0);
-
-    // Show only ledgers with dates that are today or in the future
-    return matchesSearch && (itemDate >= today);
-  });
-
-  const columns = [
-    { 
-      key: 'ledger_name', 
-      label: 'Ledger Name',
-      render: (row) => {
-        const itemDate = new Date(row.lastTransactionDate);
-        itemDate.setHours(0, 0, 0, 0);
-        const isToday = itemDate.getTime() === today.getTime();
-
-        return (
-          <div className="ledger-name-wrapper">
-            <span>{row.ledger_name}</span>
-            {isToday && <span className="today-badge">Today</span>}
-          </div>
-        );
-      }
-    },
-    { key: 'lastTransactionDate', label: 'Date', render: (row) => row.lastTransactionDate ? row.lastTransactionDate : '-' },
-    { 
-      key: 'lastComments', 
-      label: 'Comments',
-      render: (row) => (
-        <a href="#" className="comment-link" onClick={(e) => {
-          e.preventDefault();
-          navigate('/notify-detail', { state: { row } });
-        }}>
-          {row.lastComments || 'No comments'}
-        </a>
-      )
-    }
-  ];
-
   return (
-    <div className="ledger-page">
-      <div className="ledger-header">
-        <h2>Collection Details</h2>
-        <div className="search-card">
-          <div className="search-input-wrapper">
-            <Search className="search-icon" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search by Ledger Name..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="search-input"
-            />
-          </div>
-          <button 
-            className={`filter-btn ${showAll ? 'active' : ''}`}
-            onClick={() => setShowAll(!showAll)}
-          >
-            {showAll ? 'Show Pending' : 'Show All'}
-          </button>
-        </div>
+    <div className="notify-page">
+      {error && <div className="notify-error">⚠️ {error}</div>}
+
+      <div className="notify-header">
+        <h1>Ledger Notifications</h1>
+        <p className="notify-subtitle">Recent ledger updates and changes</p>
       </div>
 
-      <div className="ledger-content">
+      <div className="notify-table-section">
         {loading ? (
-          <p>Loading...</p>
-        ) : error ? (
-          <p className="error">{error}</p>
+          <div className="notify-loading">Loading...</div>
         ) : (
-          <Table 
-            columns={columns} 
-            data={processedData} 
-            minWidth={1700}
-            striped={true}
-          />
+          <div className="notify-table-container">
+            <div className="notify-table-wrapper">
+              {ledgers.length === 0 ? (
+                <div className="notify-empty">No ledger updates found</div>
+              ) : (
+                <table className="notify-table">
+                  <thead>
+                    <tr>
+                      {columns.map((col) => (
+                        <th key={col.key} style={{ width: col.width, textAlign: col.align }}>
+                          {col.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ledgers.map((ledger, index) => (
+                      <tr
+                        key={ledger.id || index}
+                        className="notify-table-row"
+                        onClick={() => handleRowClick(ledger)}
+                      >
+                        {columns.map((col) => (
+                          <td key={col.key} style={{ textAlign: col.align }}>
+                            {col.render ? col.render(ledger[col.key]) : ledger[col.key] || '—'}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

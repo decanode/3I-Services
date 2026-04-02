@@ -1,9 +1,3 @@
-/**
- * Ledger_logs Model
- * Audit trail for all ledger debit/credit updates
- * Stores history of changes with timestamps
- */
-
 const LEDGER_LOGS_FIELDS = [
   'ledger_id',
   'ledger_name',

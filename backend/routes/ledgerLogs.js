@@ -15,4 +15,10 @@ router.get('/', authenticate, ledgerLogsController.list);
  */
 router.get('/:ledger_id', authenticate, ledgerLogsController.getByLedgerId);
 
+/**
+ * PUT /api/ledger-logs/:logId
+ * Update log entry with date and comments
+ */
+router.put('/:logId', authenticate, ledgerLogsController.update);
+
 module.exports = router;
