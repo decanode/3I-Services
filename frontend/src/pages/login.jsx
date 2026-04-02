@@ -2,17 +2,25 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
-import { AnimatedButton, Dropdown, cityOptions } from '../components/Button';
+import { AnimatedButton, Dropdown, cityOptions, COUNTRY_OPTIONS } from '../components/Button';
 import DatePicker from '../components/datepicker';
 import Loader from '../components/loader';
+import { 
+  Scale, FileText, Network, Smartphone, Code, Settings, 
+  CheckCircle2, ChevronRight, Zap, Briefcase, Globe, Cpu, Palette, Lock 
+} from 'lucide-react';
+import card1 from '../images/cards/card1.jpg';
+import card2 from '../images/cards/card2.jpg';
+import card3 from '../images/cards/card3.png';
+import card4 from '../images/cards/card4.png';
 
 const CONFIG = {
   carousel: {
     transitionSpeed: 0.7,
     autoplayInterval: 2000,
-    scaleDropoff: 0.19,
-    spreadX: 20,
-    dropY: 10,
+    scaleDropoff: 0.50,
+    spreadX: 40,
+    dropY: 1,
     // Card dimensions (responsive: mobile sm  / tablet md  / desktop lg )
     cardWidth: { sm: 280, md: 320, lg: 500},   // in pixels
     cardHeight: { sm: 380, md: 450, lg: 500},  // in pixels
@@ -32,38 +40,101 @@ const Icons = {
   Loader: () => <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
 };
 
-// --- CAROUSEL CARDS DATA ---
-const LOGIN_CARDS = [
-  { id: 1, title: 'Regulatory', keyword: 'compliance', img: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800&auto=format&fit=crop' },
-  { id: 2, title: 'Licence', keyword: 'management', img: 'https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?q=80&w=800&auto=format&fit=crop' },
-  { id: 3, title: 'Network', keyword: 'audit', img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop' },
-  { id: 4, title: 'Mobile Apps', keyword: 'development', img: 'https://images.unsplash.com/photo-1509343252989-198994fa86c4?q=80&w=800&auto=format&fit=crop' },
-  { id: 5, title: 'Web Dev', keyword: 'solutions', img: 'https://images.unsplash.com/photo-1580238053412-19cce48cb262?q=80&w=800&auto=format&fit=crop' },
-  { id: 6, title: 'Custom Software', keyword: 'innovation', img: 'https://images.unsplash.com/photo-1496660505504-20d0fa8ef9de?q=80&w=800&auto=format&fit=crop' },
-  { id: 7, title: 'ERP Software', keyword: 'enterprise', img: 'https://images.unsplash.com/photo-1603351154351-5e2d0600bb77?q=80&w=800&auto=format&fit=crop' },
-];
 
-const SIGNUP_CARDS = [
-  { id: 8, title: 'IoT Solutions', keyword: 'connectivity', img: 'https://images.unsplash.com/photo-1557672172-298e090bd0f1?q=80&w=800&auto=format&fit=crop' },
-  { id: 9, title: 'RFID', keyword: 'tracking', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=800&auto=format&fit=crop' },
-  { id: 10, title: 'Security', keyword: 'protection', img: 'https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=800&auto=format&fit=crop' },
-  { id: 11, title: 'Analytics', keyword: 'insights', img: 'https://images.unsplash.com/photo-1514315384763-ba401779410f?q=80&w=800&auto=format&fit=crop' },
-  { id: 12, title: 'Cloud', keyword: 'scalability', img: 'https://images.unsplash.com/photo-1532274402911-5a369e4c4bb5?q=80&w=800&auto=format&fit=crop' },
-  { id: 13, title: 'Support', keyword: 'excellence', img: 'https://images.unsplash.com/photo-1496062031456-07b8f162a322?q=80&w=800&auto=format&fit=crop' },
-  { id: 14, title: 'Consulting', keyword: 'expertise', img: 'https://images.unsplash.com/photo-1507369512168-9b7ee6caee1a?q=80&w=800&auto=format&fit=crop' },
-];
 
-const COUNTRY_OPTIONS = [
-  { value: '+91', label: '+91 - India', shortLabel: '+91' },
-  { value: '+65', label: '+65 - Singapore', shortLabel: '+65' },
-  { value: '+1', label: '+1 - USA', shortLabel: '+1' },
-  { value: '+44', label: '+44 - UK', shortLabel: '+44' },
-  { value: '+61', label: '+61 - Australia', shortLabel: '+61' },
-  { value: '+86', label: '+86 - China', shortLabel: '+86' },
-  { value: '+81', label: '+81 - Japan', shortLabel: '+81' },
-  { value: '+33', label: '+33 - France', shortLabel: '+33' },
-  { value: '+49', label: '+49 - Germany', shortLabel: '+49' },
-  { value: '+39', label: '+39 - Italy', shortLabel: '+39' },
+
+// --- CAROUSEL CARDS DATA - NEW DESIGN WITH IMAGES ---
+const SERVICES_CARDS = [
+  { 
+    id: 1, 
+    title: 'Regulatory Compliance', 
+    keyword: 'compliance', 
+    icon: Lock,
+    iconColor: 'text-amber-600',
+    gradientFrom: 'from-amber-400',
+    gradientTo: 'to-orange-500',
+    image: card1,
+    desc: 'Licence Compliance Management - SARAS',
+    features: [
+      { text: 'Periodic Audit Compliance', type: 'dot' },
+      { text: 'Licence Fee & Budget Management', type: 'dot' }
+    ]
+  },
+  { 
+    id: 2, 
+    title: 'Licence Operations', 
+    keyword: 'licensing', 
+    icon: Briefcase,
+    iconColor: 'text-blue-600',
+    gradientFrom: 'from-blue-400',
+    gradientTo: 'to-cyan-500',
+    image: card2,
+    desc: 'New Licence Application on SARAL Sanchar',
+    features: [
+      { text: 'Licence Renewal Management', type: 'dot' },
+      { text: 'Compliance Tracking', type: 'dot' }
+    ]
+  },
+  { 
+    id: 3, 
+    title: 'Network Solutions', 
+    keyword: 'networking', 
+    icon: Globe,
+    iconColor: 'text-teal-600',
+    gradientFrom: 'from-teal-400',
+    gradientTo: 'to-emerald-500',
+    image: card3,
+    desc: 'Network Optimisation & Security',
+    features: [
+      { text: 'Advanced Network Security', type: 'dot' },
+      { text: 'Performance Monitoring', type: 'dot' }
+    ]
+  },
+  { 
+    id: 4, 
+    title: 'Mobile Development', 
+    keyword: 'mobile solutions', 
+    icon: Smartphone,
+    iconColor: 'text-purple-600',
+    gradientFrom: 'from-purple-400',
+    gradientTo: 'to-pink-500',
+    image: card4,
+    desc: 'Native & Cross-platform Mobile Apps',
+    features: [
+      { text: 'iOS & Android Excellence', type: 'dot' },
+      { text: 'Premium User Experiences', type: 'dot' }
+    ]
+  },
+  { 
+    id: 5, 
+    title: 'Web Development', 
+    keyword: 'web innovation', 
+    icon: Palette,
+    iconColor: 'text-emerald-600',
+    gradientFrom: 'from-emerald-400',
+    gradientTo: 'to-green-500',
+    image: card3,
+    desc: 'Modern & Responsive Web Experiences',
+    features: [
+      { text: 'Full-Stack Technologies', type: 'dot' },
+      { text: 'SEO & Performance Optimized', type: 'dot' }
+    ]
+  },
+  { 
+    id: 6, 
+    title: 'Enterprise Software', 
+    keyword: 'enterprise solutions', 
+    icon: Cpu,
+    iconColor: 'text-red-600',
+    gradientFrom: 'from-red-400',
+    gradientTo: 'to-rose-500',
+    image: card4,
+    desc: 'Custom Software for Complex Workflows',
+    features: [
+      { text: 'End-to-End Integration', type: 'dot' },
+      { text: 'Scalable Architecture', type: 'dot' }
+    ]
+  },
 ];
 
 export default function LoginPage() {
@@ -75,11 +146,7 @@ export default function LoginPage() {
   const [activePanel, setActivePanel] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const currentCards = useMemo(() => {
-    if (activePanel === 'login' || activePanel === 'forgot') return LOGIN_CARDS;
-    if (activePanel === 'signup') return SIGNUP_CARDS;
-    return [...LOGIN_CARDS, ...SIGNUP_CARDS];
-  }, [activePanel]);
+  const currentCards = SERVICES_CARDS;
   
   // Forms State
   const [formData, setFormData] = useState({
@@ -96,6 +163,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadedImages, setLoadedImages] = useState({});
   const [alert, setAlert] = useState({ show: false, type: '', message: '' });
 
   const OTP_VALID_TIME = 120;
@@ -104,6 +172,10 @@ export default function LoginPage() {
   const showAlert = (type, message) => {
     setAlert({ show: true, type, message });
     setTimeout(() => setAlert({ show: false, type: '', message: '' }), 4000);
+  };
+
+  const handleImageLoad = (cardId) => {
+    setLoadedImages(prev => ({ ...prev, [cardId]: true }));
   };
 
   const handleInputChange = (e, target = 'form') => {
@@ -604,15 +676,73 @@ export default function LoginPage() {
               }}
             >
               <div 
-                className="relative overflow-hidden shadow-2xl group bg-black rounded-lg border border-white/10"
-                style={{
-                  width: `${CONFIG.carousel.cardWidth.lg}px`,
-                  height: `${CONFIG.carousel.cardHeight.lg}px`,
-                }}
-              >
-                <img src={card.img} alt={card.title} className="w-full h-full object-cover select-none transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100" draggable={false} />
-                <div className="absolute inset-0 bg-black/10 transition-opacity group-hover:bg-transparent" />
-              </div>
+                  className={`relative shadow-2xl rounded-3xl flex flex-col overflow-hidden transition-all duration-700 cursor-default`}
+                  style={{
+                    width: `${CONFIG.carousel.cardWidth.lg}px`,
+                    height: `${CONFIG.carousel.cardHeight.lg}px`,
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%)',
+                  }}
+                >
+                  {/* Top Image Section */}
+                  <div className="relative h-56 overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
+                    <img 
+                      src={card.image} 
+                      alt={card.title}
+                      onLoad={() => handleImageLoad(card.id)}
+                      className={`w-full h-full object-cover transition-all duration-700 ${
+                        loadedImages[card.id] 
+                          ? 'opacity-100 scale-100' 
+                          : 'opacity-0 scale-95'
+                      }`}
+                    />
+                    {!loadedImages[card.id] && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-200 animate-pulse"></div>
+                    )}
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/30 pointer-events-none"></div>
+                  </div>
+
+                  {/* Content Section */}
+                  <div className="flex flex-col flex-1 p-7 lg:p-8 relative z-10">
+                    {/* Header with Icon */}
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-2xl lg:text-2xl font-black text-gray-900 tracking-tight leading-tight flex-1">{card.title}</h3>
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ml-3 shadow-lg bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo}`}>
+                        {React.createElement(card.icon, { size: 24, strokeWidth: 2, className: 'text-white drop-shadow-lg' })}
+                      </div>
+                    </div>
+
+                    {/* Description with Colorful Background */}
+                    <div className={`mb-5 p-4 rounded-2xl transition-all duration-500`}
+                      style={{
+                        background: `linear-gradient(135deg, ${card.gradientFrom === 'from-amber-400' ? 'rgba(251,191,36,0.12)' : card.gradientFrom === 'from-blue-400' ? 'rgba(96,165,250,0.12)' : card.gradientFrom === 'from-teal-400' ? 'rgba(45,212,191,0.12)' : card.gradientFrom === 'from-purple-400' ? 'rgba(196,181,253,0.12)' : card.gradientFrom === 'from-emerald-400' ? 'rgba(110,231,183,0.12)' : 'rgba(248,113,113,0.12)'}, rgba(255,255,255,0.8))`,
+                      }}
+                    >
+                      <p className="text-gray-700 text-sm lg:text-base font-semibold leading-relaxed">
+                        {card.desc}
+                      </p>
+                    </div>
+
+                    {/* Features */}
+                    <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+                      <div className="space-y-2.5">
+                        {card.features && card.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-start gap-2.5 p-2 rounded-lg">
+                            <div className={`flex-shrink-0 w-1.5 h-1.5 rounded-full mt-2 shadow-md ${
+                              idx === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500' :
+                              idx === 1 ? `bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo}` :
+                              'bg-gradient-to-br from-gray-400 to-gray-500'
+                            }`}></div>
+                            <span className="text-gray-700 text-sm font-semibold">
+                              {feature.text}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
             </div>
           );
         })}

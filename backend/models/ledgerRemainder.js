@@ -10,11 +10,14 @@ const LEDGER_REMAINDER_FIELDS = [
   'updatedByUserId',
   'sourceFileName',
   'group',
+  'contact',
+  'mobile',
+  'email',
 ];
 
 const LEDGER_REMAINDER_COLLECTION_NAME = 'Ledger_Remainder';
 
-function createLedgerRemainderEntry(ledger_id, ledger_name, city, debit = 0, credit = 0, nextCallDate = null, comments = null, group = null) {
+function createLedgerRemainderEntry(ledger_id, ledger_name, city, debit = 0, credit = 0, nextCallDate = null, comments = null, group = null, contact = null, mobile = null, email = null) {
   const entry = {
     ledger_id: String(ledger_id || '').trim(),
     ledger_name: String(ledger_name || '').trim(),
@@ -26,6 +29,21 @@ function createLedgerRemainderEntry(ledger_id, ledger_name, city, debit = 0, cre
   // Add group if provided
   if (group && String(group).trim()) {
     entry.group = String(group).trim();
+  }
+
+  // Add contact if provided
+  if (contact && String(contact).trim()) {
+    entry.contact = String(contact).trim();
+  }
+
+  // Add mobile if provided
+  if (mobile && String(mobile).trim()) {
+    entry.mobile = String(mobile).trim();
+  }
+
+  // Add email if provided
+  if (email && String(email).trim()) {
+    entry.email = String(email).trim();
   }
   
   // Initialize nextCallDate as empty for user to fill in
@@ -62,7 +80,10 @@ function extractUniqueLedgerRemainders(records) {
       0,  // credit - initialize to 0
       null,  // nextCallDate - initialize as empty for user to populate
       null,  // comments
-      record.group  // pass group from master record
+      record.group,  // group
+      record.contact,  // contact
+      record.mobile,  // mobile
+      record.email  // email
     );
     
     // Only add if ledger_name exists

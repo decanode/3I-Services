@@ -123,6 +123,20 @@ export const cityOptions = [
   { value: 'Indore', label: 'Indore' }
 ];
 
+// Country options
+export const COUNTRY_OPTIONS = [
+  { value: '+91', label: '+91 - India', shortLabel: '+91' },
+  { value: '+65', label: '+65 - Singapore', shortLabel: '+65' },
+  { value: '+1', label: '+1 - USA', shortLabel: '+1' },
+  { value: '+44', label: '+44 - UK', shortLabel: '+44' },
+  { value: '+61', label: '+61 - Australia', shortLabel: '+61' },
+  { value: '+86', label: '+86 - China', shortLabel: '+86' },
+  { value: '+81', label: '+81 - Japan', shortLabel: '+81' },
+  { value: '+33', label: '+33 - France', shortLabel: '+33' },
+  { value: '+49', label: '+49 - Germany', shortLabel: '+49' },
+  { value: '+39', label: '+39 - Italy', shortLabel: '+39' },
+];
+
 // Pagination Component
 export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   if (totalPages <= 1) return null;

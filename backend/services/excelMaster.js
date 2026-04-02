@@ -81,7 +81,13 @@ class ExcelMasterService {
     const snapshot = await this.collection.orderBy('importedAt', 'desc').limit(limit).get();
     const rows = [];
     snapshot.forEach((doc) => {
-      rows.push(pickMasterFields(doc.data()));
+      const data = doc.data();
+      const picked = pickMasterFields(data);
+      // Include ledger_id directly from document if present
+      if (data.ledger_id) {
+        picked.ledger_id = data.ledger_id;
+      }
+      rows.push(picked);
     });
     return rows;
   }

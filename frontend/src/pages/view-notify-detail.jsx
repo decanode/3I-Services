@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { User, TrendingDown, TrendingUp, Calendar, MessageSquare, Save, AlertCircle } from 'lucide-react';
+import { User, TrendingDown, TrendingUp, Calendar, MessageSquare, Save, X, AlertCircle, Phone, Mail } from 'lucide-react';
 import Dashboard from '../components/Dashboard';
 import DatePicker from '../components/datepicker';
 import { apiUrl } from '../utils/api';
@@ -10,9 +10,11 @@ export default function NotifyDetailPage() {
   const location = useLocation();
   const { row } = location.state || {};
   const [ledgerData, setLedgerData] = useState(row || null);
+  const [customerData, setCustomerData] = useState(null);
   const [editableDate, setEditableDate] = useState('');
   const [editableComments, setEditableComments] = useState('');
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditingDate, setIsEditingDate] = useState(false);
+  const [isEditingComment, setIsEditingComment] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -71,6 +73,54 @@ export default function NotifyDetailPage() {
 
     fetchLedgerData();
   }, [row?.ledger_id]);
+
+  // Fetch customer data from Ledger_Remainder based on ledger_id
+  useEffect(() => {
+    const fetchCustomerData = async () => {
+      if (!ledgerData?.ledger_id) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(apiUrl(`/api/ledger-remainder?limit=500`), {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch customer data: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        if (!responseText) {
+          throw new Error('Empty response from server');
+        }
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error('Invalid response format from server');
+        }
+        
+        // Find the matching customer from ledger remainder (it already has the data)
+        const matchedCustomer = data.rows?.find(r => r.ledger_id === ledgerData.ledger_id);
+        
+        if (matchedCustomer) {
+          setCustomerData(matchedCustomer);
+          console.log('Fetched customer data from Ledger_Remainder:', matchedCustomer);
+        }
+      } catch (error) {
+        console.error('Error fetching customer data:', error);
+        // Silently fail if customer data is not found
+      }
+    };
+
+    fetchCustomerData();
+  }, [ledgerData?.ledger_id]);
 
   const formatCurrency = (value) => {
     if (value == null || value === 0 || value === '0') return '—';
@@ -162,7 +212,8 @@ export default function NotifyDetailPage() {
       });
 
       setMessage({ type: 'success', text: 'Updated successfully!' });
-      setIsEditMode(false);
+      setIsEditingDate(false);
+      setIsEditingComment(false);
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
       console.error('handleSave - error:', error);
@@ -220,11 +271,55 @@ export default function NotifyDetailPage() {
 
           {ledgerData && (
             <div className="interaction-section">
-              <h3 className="interaction-heading">Interaction Details :</h3>
+              <div className="interaction-heading-wrapper">
+                <h3 className="interaction-heading">Interaction Details :</h3>
+                {(isEditingComment || isEditingDate) && (
+                  <div className="interaction-edit-actions">
+                    <button 
+                      className="icon-button save-icon-btn"
+                      onClick={handleSave}
+                      disabled={isLoading}
+                      title="Save"
+                    >
+                      <Save size={18} />
+                    </button>
+                    <button 
+                      className="icon-button cancel-icon-btn"
+                      onClick={() => {
+                        setIsEditingDate(false);
+                        setIsEditingComment(false);
+                        setEditableDate(ledgerData?.nextCallDate || '');
+                        setEditableComments(ledgerData?.lastComments || '');
+                      }}
+                      disabled={isLoading}
+                      title="Cancel"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                )}
+              </div>
               
-              {isEditMode ? (
-                <div className="interaction-cards">
-                  <div className="detail-card date-card editable-card">
+              <div className={`interaction-cards read-only ${!isEditingComment && !isEditingDate ? 'clickable' : ''}`}>
+                {!isEditingDate ? (
+                  <div 
+                    className="detail-card date-card"
+                    onClick={() => setIsEditingDate(true)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => e.key === 'Enter' && setIsEditingDate(true)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="detail-header">
+                      <span className="detail-title">Next Call Date</span>
+                      <Calendar className="detail-icon" size={20} />
+                    </div>
+                    <div className="detail-value">
+                      {editableDate ? formatDate(editableDate) : '—'}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="detail-card date-card date-edit-inline">
                     <div className="detail-header">
                       <span className="detail-title">Next Call Date</span>
                       <Calendar className="detail-icon" size={20} />
@@ -236,47 +331,16 @@ export default function NotifyDetailPage() {
                       />
                     </div>
                   </div>
+                )}
 
-                  <div className="detail-card comment-card editable-card">
-                    <div className="detail-header">
-                      <span className="detail-title">Comments</span>
-                      <MessageSquare className="detail-icon" size={20} />
-                    </div>
-                    <div className="editable-field">
-                      <textarea
-                        value={editableComments}
-                        onChange={(e) => setEditableComments(e.target.value)}
-                        placeholder="Enter comments here..."
-                        className="comment-textarea"
-                        rows={4}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="interaction-cards read-only clickable">
-                  <div 
-                    className="detail-card date-card"
-                    onClick={() => setIsEditMode(true)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyPress={(e) => e.key === 'Enter' && setIsEditMode(true)}
-                  >
-                    <div className="detail-header">
-                      <span className="detail-title">Next Call Date</span>
-                      <Calendar className="detail-icon" size={20} />
-                    </div>
-                    <div className="detail-value">
-                      {editableDate ? formatDate(editableDate) : '—'}
-                    </div>
-                  </div>
-
+                {!isEditingComment ? (
                   <div 
                     className="detail-card comment-card"
-                    onClick={() => setIsEditMode(true)}
+                    onClick={() => setIsEditingComment(true)}
                     role="button"
                     tabIndex={0}
-                    onKeyPress={(e) => e.key === 'Enter' && setIsEditMode(true)}
+                    onKeyPress={(e) => e.key === 'Enter' && setIsEditingComment(true)}
+                    style={{ cursor: 'pointer' }}
                   >
                     <div className="detail-header">
                       <span className="detail-title">Comments</span>
@@ -286,32 +350,59 @@ export default function NotifyDetailPage() {
                       {editableComments || '—'}
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                ) : (
+                  <div className="detail-card comment-card comment-edit-inline">
+                    <div className="comment-edit-header">
+                      <span className="detail-title">Comments</span>
+                      <MessageSquare className="detail-icon" size={20} />
+                    </div>
+                    <textarea
+                      value={editableComments}
+                      onChange={(e) => setEditableComments(e.target.value)}
+                      placeholder="Enter comments here..."
+                      className="comment-textarea"
+                      autoFocus
+                    />
+                  </div>
+                )}
+              </div>
 
-          {ledgerData && isEditMode && (
-            <div className="save-section">
-              <button 
-                className="save-button"
-                onClick={handleSave}
-                disabled={isLoading}
-              >
-                <Save size={18} />
-                {isLoading ? 'Saving...' : 'Save Changes'}
-              </button>
-              <button 
-                className="cancel-button"
-                onClick={() => {
-                  setIsEditMode(false);
-                  setEditableDate(ledgerData?.nextCallDate || '');
-                  setEditableComments(ledgerData?.lastComments || '');
-                }}
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
+              {customerData && (
+                <>
+                  <h4 className="customer-details-heading">Customer Details :</h4>
+                  <div className="customer-details-row">
+                    <div className="detail-card customer-detail-name-card">
+                      <div className="detail-header">
+                        <span className="detail-title">Customer Name</span>
+                        <User className="detail-icon" size={20} />
+                      </div>
+                      <div className="detail-value">
+                        {customerData.contact || '—'}
+                      </div>
+                    </div>
+
+                    <div className="detail-card customer-detail-phone-card">
+                      <div className="detail-header">
+                        <span className="detail-title">Mobile</span>
+                        <Phone className="detail-icon" size={20} />
+                      </div>
+                      <div className="detail-value">
+                        {customerData.mobile || '—'}
+                      </div>
+                    </div>
+
+                    <div className="detail-card customer-detail-email-card">
+                      <div className="detail-header">
+                        <span className="detail-title">Email</span>
+                        <Mail className="detail-icon" size={20} />
+                      </div>
+                      <div className="detail-value">
+                        {customerData.email || '—'}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

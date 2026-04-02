@@ -1,6 +1,7 @@
 /** Firestore collection: Excel_master — one document per spreadsheet row */
 
 const EXCEL_MASTER_FIELDS = [
+  'ledger_id',
   'code',
   'type',
   'ledger',
