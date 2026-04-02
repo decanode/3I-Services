@@ -13,6 +13,8 @@ import card1 from '../images/cards/card1.jpg';
 import card2 from '../images/cards/card2.jpg';
 import card3 from '../images/cards/card3.png';
 import card4 from '../images/cards/card4.png';
+import card5 from '../images/cards/card5.png';
+import card6 from '../images/cards/card6.png';
 
 const CONFIG = {
   carousel: {
@@ -20,10 +22,10 @@ const CONFIG = {
     autoplayInterval: 2000,
     scaleDropoff: 0.50,
     spreadX: 40,
-    dropY: 1,
+    dropY: 0.90,
     // Card dimensions (responsive: mobile sm  / tablet md  / desktop lg )
-    cardWidth: { sm: 280, md: 320, lg: 500},   // in pixels
-    cardHeight: { sm: 380, md: 450, lg: 500},  // in pixels
+    cardWidth: { sm: 280, md: 320, lg: 600},   // in pixels
+    cardHeight: { sm: 380, md: 450, lg: 600},  // in pixels
   },
   theme: {
     accentColor: '#fbbf24',    // Golden amber - complements maroon
@@ -53,7 +55,7 @@ const SERVICES_CARDS = [
     iconColor: 'text-amber-600',
     gradientFrom: 'from-amber-400',
     gradientTo: 'to-orange-500',
-    image: card1,
+    image: card2,
     desc: 'Licence Compliance Management - SARAS',
     features: [
       { text: 'Periodic Audit Compliance', type: 'dot' },
@@ -68,7 +70,7 @@ const SERVICES_CARDS = [
     iconColor: 'text-blue-600',
     gradientFrom: 'from-blue-400',
     gradientTo: 'to-cyan-500',
-    image: card2,
+    image: card1,
     desc: 'New Licence Application on SARAL Sanchar',
     features: [
       { text: 'Licence Renewal Management', type: 'dot' },
@@ -83,7 +85,7 @@ const SERVICES_CARDS = [
     iconColor: 'text-teal-600',
     gradientFrom: 'from-teal-400',
     gradientTo: 'to-emerald-500',
-    image: card3,
+    image: card4,
     desc: 'Network Optimisation & Security',
     features: [
       { text: 'Advanced Network Security', type: 'dot' },
@@ -98,7 +100,7 @@ const SERVICES_CARDS = [
     iconColor: 'text-purple-600',
     gradientFrom: 'from-purple-400',
     gradientTo: 'to-pink-500',
-    image: card4,
+    image: card5,
     desc: 'Native & Cross-platform Mobile Apps',
     features: [
       { text: 'iOS & Android Excellence', type: 'dot' },
@@ -128,7 +130,7 @@ const SERVICES_CARDS = [
     iconColor: 'text-red-600',
     gradientFrom: 'from-red-400',
     gradientTo: 'to-rose-500',
-    image: card4,
+    image: card6,
     desc: 'Custom Software for Complex Workflows',
     features: [
       { text: 'End-to-End Integration', type: 'dot' },
@@ -684,10 +686,12 @@ export default function LoginPage() {
                   }}
                 >
                   {/* Top Image Section */}
-                  <div className="relative h-56 overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
+                  <div className="relative h-96 overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
                     <img 
                       src={card.image} 
                       alt={card.title}
+                      width={600}
+                      height={384}
                       onLoad={() => handleImageLoad(card.id)}
                       className={`w-full h-full object-cover transition-all duration-700 ${
                         loadedImages[card.id] 
