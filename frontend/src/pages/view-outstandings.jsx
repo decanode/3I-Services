@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiUrl } from '../utils/api';
 import Table from '../components/Table';
+import PageLoader from '../components/loading';
 import '../styles/pagestyles/view-outstandings.css';
 
 function formatCurrency(value) {
@@ -34,6 +35,7 @@ function formatDate(dateValue) {
 export default function ViewOutstandingsPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showLoader, setShowLoader] = useState(true);
   const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
@@ -104,6 +106,14 @@ export default function ViewOutstandingsPage() {
 
   return (
     <div className="outstandings-page">
+      {showLoader && (
+        <PageLoader
+          pageName="Outstandings"
+          isDataLoading={loading}
+          onComplete={() => setShowLoader(false)}
+        />
+      )}
+
       {error && <div className="outstandings-error">{error}</div>}
       
       <div className="outstandings-header">

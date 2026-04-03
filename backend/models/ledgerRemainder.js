@@ -13,6 +13,15 @@ const LEDGER_REMAINDER_FIELDS = [
   'contact',
   'mobile',
   'email',
+  'cname1',
+  'cmob1',
+  'cemail1',
+  'cname2',
+  'cmob2',
+  'cemail2',
+  'cname3',
+  'cmob3',
+  'cemail3',
 ];
 
 const LEDGER_REMAINDER_COLLECTION_NAME = 'Ledger_Remainder';

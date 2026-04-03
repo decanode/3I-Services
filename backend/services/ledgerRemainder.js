@@ -324,17 +324,44 @@ class LedgerRemainderService {
         updatedAt: new Date().toISOString(),
       };
 
-      // Update allowed fields
-      if (updateData.nextCallDate !== undefined) {
-        updatePayload.nextCallDate = updateData.nextCallDate || null;
-      }
-      if (updateData.lastComments !== undefined) {
-        updatePayload.lastComments = updateData.lastComments || null;
-      }
+      // Copy all fields from updateData to updatePayload
+      // This ensures all customer fields and other fields are included
+      Object.keys(updateData).forEach(key => {
+        updatePayload[key] = updateData[key];
+      });
 
-      console.log('[LedgerRemainderService] Updating with payload:', updatePayload);
-      await docRef.update(updatePayload);
-      console.log('[LedgerRemainderService] Update successful');
+      console.log('[LedgerRemainderService] Complete updatePayload:', JSON.stringify(updatePayload, null, 2));
+
+      // Perform the update with error handling
+      try {
+        await docRef.update(updatePayload);
+        console.log('[LedgerRemainderService] Firestore update successful for ledger:', ledger_id);
+
+        // Log which fields were updated
+        const updatedFields = Object.keys(updatePayload).filter(key => updatePayload[key] !== null && updatePayload[key] !== undefined);
+        console.log('[LedgerRemainderService] Updated fields:', updatedFields);
+
+        // Verify the update by reading the document
+        const verifyDoc = await docRef.get();
+        if (verifyDoc.exists) {
+          const verifyData = verifyDoc.data();
+          console.log('[LedgerRemainderService] Verification - Stored data:', {
+            cname1: verifyData.cname1,
+            cmob1: verifyData.cmob1,
+            cemail1: verifyData.cemail1,
+            cname2: verifyData.cname2,
+            cmob2: verifyData.cmob2,
+            cemail2: verifyData.cemail2,
+            cname3: verifyData.cname3,
+            cmob3: verifyData.cmob3,
+            cemail3: verifyData.cemail3,
+            updatedAt: verifyData.updatedAt
+          });
+        }
+      } catch (updateError) {
+        console.error('[LedgerRemainderService] Firestore update error:', updateError);
+        throw updateError;
+      }
 
       const updatedDoc = await docRef.get();
       return {

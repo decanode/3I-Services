@@ -1,6 +1,6 @@
 import { Home, FileSpreadsheet, Table2, LogOut, UploadCloud } from 'lucide-react';
 import '../styles/componentstyles/sidebar.css';
-import threeiLogo from '../images/3iLogo.jpg';
+import threeiLogo from '../images/3iLogo.svg';
 
 const NAV_ITEMS = [
   { id: 'home', icon: Home, label: 'Home' },

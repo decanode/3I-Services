@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiUrl } from '../utils/api';
 import Table from '../components/Table';
+import PageLoader from '../components/loading';
 import '../styles/pagestyles/view-notify.css';
 
 export default function NotifyPage() {
   const [ledgers, setLedgers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showLoader, setShowLoader] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -89,6 +91,14 @@ export default function NotifyPage() {
 
   return (
     <div className="notify-page">
+      {showLoader && (
+        <PageLoader
+          pageName="Notifications"
+          isDataLoading={loading}
+          onComplete={() => setShowLoader(false)}
+        />
+      )}
+
       {error && <div className="notify-error">⚠️ {error}</div>}
 
       <div className="notify-header">

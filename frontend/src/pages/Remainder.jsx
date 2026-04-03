@@ -1,53 +1,50 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, FileText, MapPin, MessageSquare, AlertCircle, RefreshCw, ChevronRight, ArrowRight, TrendingDown, TrendingUp } from 'lucide-react';
+import { Calendar, FileText, MapPin, MessageSquare, AlertCircle, RefreshCw, ChevronRight, ArrowRight, TrendingDown, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
 import Alert from '../components/Alert';
 import '../styles/pagestyles/Remainder.css';
 
 function formatCurrency(value) {
-  if (value == null || value === 0 || value === '0') return null;
   const num = parseFloat(value);
-  if (isNaN(num)) return null;
+  if (!value || isNaN(num) || num === 0) return null;
   return '₹' + num.toLocaleString('en-IN');
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
-  try {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    // Format as dd-mm-yyyy
-    const padZero = (num) => String(num).padStart(2, '0');
-    return `${padZero(day)}-${padZero(month)}-${year}`;
-  } catch {
-    return dateStr;
-  }
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return `${String(day).padStart(2, '0')}-${String(month).padStart(2, '0')}-${year}`;
 }
 
 function getDayOffset(dateStr) {
   if (!dateStr) return null;
-  try {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const diffTime = date - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  } catch {
-    return null;
-  }
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const target = new Date(year, month - 1, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((target - today) / 86400000);
 }
 
-function getDayLabel(dayOffset) {
-  if (dayOffset === null) return '';
-  if (dayOffset === 0) return 'Today';
-  if (dayOffset === 1) return 'Tomorrow';
-  return `In ${dayOffset} days`;
+function getDayLabel(offset) {
+  if (offset === null) return '';
+  if (offset === 0) return 'Today';
+  if (offset === 1) return 'Tomorrow';
+  return `In ${offset} days`;
 }
 
-// Card Version Component
+async function fetchUpcoming(days = 7, limit = '') {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('Authentication required');
+  const url = apiUrl(`/api/ledger-remainder/upcoming?days=${days}${limit ? `&limit=${limit}` : ''}`);
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.message || json.error || 'Failed to load reminders');
+  return json;
+}
+
+// ─── Card (Dashboard Widget) ────────────────────────────────────────────────
+
 export function RemainderCard() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,233 +52,111 @@ export function RemainderCard() {
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    const fetchUpcoming = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setError('Authentication required');
-          setLoading(false);
-          return;
-        }
-
-        // Fetch more items to support expansion
-        const res = await fetch(apiUrl('/api/ledger-remainder/upcoming?days=7&limit=50'), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to fetch reminders');
-        }
-
-        const json = await res.json();
-        console.log('[RemainderCard] API Response:', json);
-        console.log('[RemainderCard] Sample item:', json.rows?.[0]);
-        
-        // Use API data directly - backend already filters items with nextCallDate
-        const items = (json.rows || [])
-          .filter(item => item.nextCallDate); // Filter items with nextCallDate
-        
-        console.log('[RemainderCard] Items with nextCallDate:', items);
-        setItems(items);
-        setError(null);
-      } catch (e) {
-        console.error('Error fetching upcoming:', e);
-        setError(e.message);
-        setItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUpcoming();
+    fetchUpcoming(7, 50)
+      .then(json => setItems((json.rows || []).filter(i => i.nextCallDate)))
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
   }, []);
 
-  // Show 3 items when collapsed, all items when expanded
-  const displayItems = expanded ? items : items.slice(0, 3);
-  const hasMoreItems = items.length > 3;
+  const visible = expanded ? items : items.slice(0, 3);
 
   return (
-    <div className="remainder-card">
-      {/* Header */}
-      <div className="remainder-card__header">
-        <div className="remainder-card__title-group">
-          <div className="remainder-card__icon-wrapper">
-            <Calendar size={20} />
+    <div className="rc">
+      <div className="rc__content">
+        <div className="rc__header">
+          <div className="rc__title-row">
+            <div className="rc__icon"><Calendar size={18} /></div>
+            <div>
+              <h3 className="rc__title">Upcoming Calls</h3>
+              <p className="rc__sub">Next 7 days</p>
+            </div>
           </div>
-          <div>
-            <h3 className="remainder-card__title">Upcoming Calls</h3>
-            <p className="remainder-card__subtitle">Next 7 days</p>
-          </div>
+          {items.length > 0 && <span className="rc__badge">{items.length}</span>}
         </div>
-        {items.length > 0 && (
-          <span className="remainder-card__badge">{items.length}</span>
-        )}
-      </div>
 
-      {/* Body */}
-      <div className="remainder-card__body">
-        {loading && (
-          <div className="remainder-card__state">
-            <div className="remainder-card__spinner"></div>
-            <p>Loading schedule...</p>
-          </div>
-        )}
-
-        {error && !loading && (
-          <div className="remainder-card__state remainder-card__state--error">
-            <AlertCircle size={24} />
-            <p>Unable to load reminders</p>
-          </div>
-        )}
-
-        {!loading && items.length === 0 && !error && (
-          <div className="remainder-card__state">
-            <Calendar size={24} />
-            <p>No calls scheduled</p>
-          </div>
-        )}
-
-        {!loading && items.length > 0 && (
-          <div className="remainder-card__items">
-            {displayItems.map((item, idx) => {
-              const dayOffset = getDayOffset(item.nextCallDate);
-              const isToday = dayOffset === 0;
-
-              const displayDate = formatDate(item.nextCallDate);
-              const dayLabel = getDayLabel(dayOffset);
-
-              return (
-                <div
-                  key={`${item.id || item.ledger_id}-${idx}`}
-                  className={`remainder-card__item ${isToday ? 'remainder-card__item--today' : ''}`}
-                >
-                  {/* Left: Date Badge */}
-                  <div className="remainder-card__item-date-section">
-                    <div className={`remainder-card__date-badge ${isToday ? 'remainder-card__date-badge--today' : ''}`}>
-                      <div className="remainder-card__date-display">{displayDate}</div>
-                      {dayLabel && <div className="remainder-card__day-label">{dayLabel}</div>}
-                    </div>
-                  </div>
-
-                  {/* Center: Ledger Name */}
-                  <div className="remainder-card__item-content">
-                    <h4 className="remainder-card__item-title">
-                      {item.ledger_name || '—'}
-                    </h4>
-                  </div>
-
-                  {/* Right: Amounts with Icons */}
-                  <div className="remainder-card__item-amounts">
-                    {formatCurrency(item.debit) && (
-                      <div className="remainder-card__amount remainder-card__amount--debit">
-                        <TrendingDown size={16} />
-                        <span className="remainder-card__amount-label">Debit</span>
-                        <span className="remainder-card__amount-value">{formatCurrency(item.debit)}</span>
-                      </div>
-                    )}
-                    {formatCurrency(item.credit) && (
-                      <div className="remainder-card__amount remainder-card__amount--credit">
-                        <TrendingUp size={16} />
-                        <span className="remainder-card__amount-label">Credit</span>
-                        <span className="remainder-card__amount-value">{formatCurrency(item.credit)}</span>
-                      </div>
-                    )}
-                  </div>
+        <div className="rc__body">
+          {loading && (
+            <div className="rc__state">
+              <div className="rc__spinner" />
+              <p>Loading schedule…</p>
+            </div>
+          )}
+          {!loading && error && (
+            <div className="rc__state rc__state--error">
+              <AlertCircle size={22} />
+              <p>Unable to load reminders</p>
+            </div>
+          )}
+          {!loading && !error && items.length === 0 && (
+            <div className="rc__state">
+              <Calendar size={22} />
+              <p>No calls scheduled</p>
+            </div>
+          )}
+          {!loading && !error && items.length > 0 && visible.map((item, idx) => {
+            const offset = getDayOffset(item.nextCallDate);
+            return (
+              <div key={`${item.id ?? item.ledger_id}-${idx}`} className={`rc__item${offset === 0 ? ' rc__item--today' : ''}`}>
+                <div className={`rc__date-badge${offset === 0 ? ' rc__date-badge--today' : ''}`}>
+                  <span>{formatDate(item.nextCallDate)}</span>
+                  {getDayLabel(offset) && <span className="rc__day-label">{getDayLabel(offset)}</span>}
                 </div>
-              );
-            })}
-          </div>
-        )}
+                <span className="rc__name">{item.ledger_name || '—'}</span>
+                <div className="rc__amounts">
+                  {formatCurrency(item.debit) && (
+                    <span className="rc__amt rc__amt--debit">
+                      <TrendingDown size={13} /> {formatCurrency(item.debit)}
+                    </span>
+                  )}
+                  {formatCurrency(item.credit) && (
+                    <span className="rc__amt rc__amt--credit">
+                      <TrendingUp size={13} /> {formatCurrency(item.credit)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Footer - Show expand/collapse button only if more than 3 items */}
-      {hasMoreItems && (
-        <button
-          type="button"
-          className="remainder-card__footer-btn"
-          onClick={() => setExpanded(!expanded)}
-        >
+      {items.length > 3 && (
+        <button className="rc__footer" onClick={() => setExpanded(x => !x)}>
           <span>{expanded ? 'Show Less' : `View All (${items.length})`}</span>
-          <ArrowRight size={16} className={expanded ? 'remainder-card__arrow--up' : ''} />
+          <ArrowRight size={15} className={expanded ? 'rc__arrow-up' : ''} />
         </button>
       )}
     </div>
   );
 }
 
-// Full Page Version Component
+// ─── Full Page ───────────────────────────────────────────────────────────────
+
 export default function RemainderPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [data, setData] = useState([]);
-  const [todayDate, setTodayDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [alertState, setAlertState] = useState(null);
 
-  const load = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('Authentication required');
-      setLoading(false);
-      return;
-    }
-
-    setError(null);
+  const load = useCallback(() => {
     setLoading(true);
-    try {
-      const res = await fetch(apiUrl('/api/ledger-remainder/upcoming?days=7'), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const json = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(json.message || json.error || 'Failed to load reminders');
-      }
-
-      console.log('[RemainderPage] API Response:', json);
-      console.log('[RemainderPage] Sample item:', json.rows?.[0]);
-      
-      // Use API data directly - backend already filters items with nextCallDate
-      const data = (json.rows || [])
-        .filter(item => item.nextCallDate); // Filter items with nextCallDate
-      
-      console.log('[RemainderPage] Items with nextCallDate:', data);
-      setData(data);
-      setTodayDate(json.todayDate || new Date().toISOString().split('T')[0]);
-    } catch (e) {
-      console.error('Error loading remainders:', e);
-      setError(e.message || 'Failed to load upcoming reminders');
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
+    setError(null);
+    fetchUpcoming(7)
+      .then(json => setData((json.rows || []).filter(i => i.nextCallDate)))
+      .catch(e => { setError(e.message); setData([]); })
+      .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
-  // Group data by nextCallDate (only items with nextCallDate)
-  const groupedByDate = data.reduce((acc, item) => {
-    // Skip items without nextCallDate
-    if (!item.nextCallDate) return acc;
-    
-    const dateKey = item.nextCallDate;
-    if (!acc[dateKey]) {
-      acc[dateKey] = [];
-    }
-    acc[dateKey].push(item);
+  const grouped = data.reduce((acc, item) => {
+    (acc[item.nextCallDate] ??= []).push(item);
     return acc;
   }, {});
-
-  // Sort dates (ascending - nearest date first)
-  const sortedDates = Object.keys(groupedByDate).sort();
+  const sortedDates = Object.keys(grouped).sort();
 
   return (
-    <div className="remainder-page">
+    <div className="rp">
       {alertState && (
         <Alert
           type={alertState.type}
@@ -292,151 +167,105 @@ export default function RemainderPage() {
         />
       )}
 
-      {/* Header */}
-      <div className="remainder-header">
-        <div className="remainder-header__content">
+      <div className="rp__header">
+        <div className="rp__header-inner">
           <div>
-            <h1 className="remainder-header__title">Upcoming Calls & Reminders</h1>
-            <p className="remainder-header__subtitle">
-              Next 7 days schedule for follow-ups and calls
-            </p>
+            <h1 className="rp__title">Upcoming Calls & Reminders</h1>
+            <p className="rp__sub">Next 7 days schedule for follow-ups</p>
           </div>
-          <button
-            type="button"
-            className="remainder-header__refresh"
-            onClick={load}
-            disabled={loading}
-          >
-            <RefreshCw size={18} className={loading ? 'remainder-header__refresh-icon--spinning' : ''} />
+          <button className="rp__refresh" onClick={load} disabled={loading}>
+            <RefreshCw size={16} className={loading ? 'spin' : ''} />
             Refresh
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="remainder-alert remainder-alert--error" role="alert">
-          <AlertCircle size={18} />
-          <span>{error}</span>
+        <div className="rp__alert">
+          <AlertCircle size={16} /> {error}
         </div>
       )}
 
-      {loading && !data.length && !error && (
-        <div className="remainder-loading">
-          <div className="remainder-loading__spinner"></div>
-          <p>Loading upcoming reminders...</p>
+      {loading && !data.length && (
+        <div className="rp__center">
+          <div className="rp__spinner" />
+          <p>Loading upcoming reminders…</p>
         </div>
       )}
 
-      {!loading && data.length === 0 && !error && (
-        <div className="remainder-empty">
-          <Calendar size={48} />
+      {!loading && !data.length && !error && (
+        <div className="rp__center">
+          <Calendar size={44} />
           <h3>No reminders scheduled</h3>
-          <p>You don't have any calls or follow-ups scheduled in the next 7 days.</p>
+          <p>No calls or follow-ups in the next 7 days.</p>
         </div>
       )}
 
       {data.length > 0 && (
-        <div className="remainder-timeline">
-          {sortedDates.map((dateKey) => {
-            const dayOffset = getDayOffset(dateKey); // dateKey is nextCallDate (YYYY-MM-DD)
-            const dayLabel = getDayLabel(dayOffset);
-            const items = groupedByDate[dateKey];
-            const isToday = dayOffset === 0;
+        <div className="rp__timeline">
+          {sortedDates.map(dateKey => {
+            const offset = getDayOffset(dateKey);
+            const isToday = offset === 0;
+            const items = grouped[dateKey];
 
             return (
-              <div key={dateKey} className={`remainder-day-group ${isToday ? 'remainder-day-group--today' : ''}`}>
-                {/* Day Header */}
-                <div className="remainder-day-header">
-                  <div className="remainder-day-header__date">
-                    <span className={`remainder-day-badge ${isToday ? 'remainder-day-badge--today' : ''}`}>
+              <div key={dateKey} className={`rp__group${isToday ? ' rp__group--today' : ''}`}>
+                <div className="rp__day-header">
+                  <div className="rp__day-left">
+                    <span className={`rp__day-badge${isToday ? ' rp__day-badge--today' : ''}`}>
                       {formatDate(dateKey)}
                     </span>
-                    {dayLabel && <span className="remainder-day-label">{dayLabel}</span>}
+                    {getDayLabel(offset) && (
+                      <span className="rp__day-label">{getDayLabel(offset)}</span>
+                    )}
                   </div>
-                  <div className="remainder-day-count">
-                    <span className="remainder-day-count__number">{items.length}</span>
-                    <span className="remainder-day-count__text">call{items.length !== 1 ? 's' : ''}</span>
-                  </div>
+                  <span className="rp__day-count">
+                    <b>{items.length}</b> call{items.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
 
-                {/* Day Items */}
-                <div className="remainder-items">
+                <div className="rp__items">
                   {items.map((item, idx) => (
-                    <div key={`${item.id || item.ledger_id}-${idx}`} className="remainder-item">
-                      <div className="remainder-item__marker"></div>
-
-                      <div className="remainder-item__content" style={{ flexDirection: 'row', alignItems: 'center', display: 'flex', width: '100%' }}>
-                        
-                        {/* Left Section - Detail */}
-                        <div style={{ flex: '1', minWidth: '0' }}>
-                          {/* Top Section - Ledger Name */}
-                          <div className="remainder-item__header">
-                            <h3 className="remainder-item__title">
-                              {item.ledger_name || '—'}
-                            </h3>
-                            {item.ledger_id && (
-                              <code className="remainder-item__id">
-                                {item.ledger_id}
-                              </code>
-                            )}
+                    <div key={`${item.id ?? item.ledger_id}-${idx}`} className="rp__item">
+                      <div className="rp__item-body">
+                        {/* Left */}
+                        <div className="rp__item-left">
+                          <div className="rp__item-name-row">
+                            <h3 className="rp__item-name">{item.ledger_name || '—'}</h3>
+                            {item.ledger_id && <code className="rp__item-id">{item.ledger_id}</code>}
                           </div>
-
-                          {/* Meta Info */}
-                          <div className="remainder-item__meta" style={{ marginTop: '0.5rem' }}>
-                            {item.city && (
-                              <div className="remainder-item__meta-item">
-                                <MapPin size={14} />
-                                <span>{item.city}</span>
-                              </div>
-                            )}
-                            {item.group && item.group !== '-' && (
-                              <div className="remainder-item__meta-item">
-                                <FileText size={14} />
-                                <span>{item.group}</span>
-                              </div>
-                            )}
+                          <div className="rp__item-meta">
+                            {item.city && <span><MapPin size={12} /> {item.city}</span>}
+                            {item.group && item.group !== '-' && <span><FileText size={12} /> {item.group}</span>}
                           </div>
                         </div>
 
-                        {/* Center Section - Comments Section */}
-                        <div style={{ flex: '1.5', padding: '0 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {item.lastComments ? (
-                            <div className="remainder-item__comments" style={{ width: '100%', margin: 0, backgroundColor: '#f9f9f9', padding: '0.75rem', borderRadius: '0.5rem', borderLeft: '4px solid var(--color-primary-red)' }}>
-                              <div className="remainder-item__comments-icon" style={{ marginTop: '2px' }}>
-                                <MessageSquare size={16} />
-                              </div>
-                              <p className="remainder-item__comments-text" style={{ margin: 0 }}>
-                                {item.lastComments}
-                              </p>
-                            </div>
-                          ) : <div style={{ width: '100%' }}></div>}
-                        </div>
+                        {/* Center */}
+                        {item.lastComments && (
+                          <div className="rp__item-comment">
+                            <MessageSquare size={14} />
+                            <p>{item.lastComments}</p>
+                          </div>
+                        )}
 
-                        {/* Right Section - Amount Info */}
-                        <div className="remainder-item__amounts" style={{ flexShrink: 0, marginTop: 0 }}>
+                        {/* Right */}
+                        <div className="rp__item-amounts">
                           {item.debit !== 0 && (
-                            <div className="remainder-item__amount remainder-item__amount--debit">
-                              <span className="remainder-item__amount-label">Debit</span>
-                              <span className="remainder-item__amount-value">
-                                ₹{item.debit.toFixed(2)}
-                              </span>
+                            <div className="rp__amt rp__amt--debit">
+                              <span>Debit</span>
+                              <b>₹{item.debit.toFixed(2)}</b>
                             </div>
                           )}
                           {item.credit !== 0 && (
-                            <div className="remainder-item__amount remainder-item__amount--credit">
-                              <span className="remainder-item__amount-label">Credit</span>
-                              <span className="remainder-item__amount-value">
-                                ₹{item.credit.toFixed(2)}
-                              </span>
+                            <div className="rp__amt rp__amt--credit">
+                              <span>Credit</span>
+                              <b>₹{item.credit.toFixed(2)}</b>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      {/* Action Arrow */}
-                      <div className="remainder-item__arrow">
-                        <ChevronRight size={20} />
-                      </div>
+                      <ChevronRight size={18} className="rp__item-arrow" />
                     </div>
                   ))}
                 </div>

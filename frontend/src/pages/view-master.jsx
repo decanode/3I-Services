@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiUrl } from '../utils/api';
 import Table from '../components/Table';
 import { Pagination } from '../components/Button';
+import PageLoader from '../components/loading';
 import '../styles/pagestyles/view-master.css';
 
 function formatCell(value) {
@@ -14,6 +15,7 @@ export default function ViewDataPage() {
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showLoader, setShowLoader] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 15;
@@ -135,6 +137,14 @@ export default function ViewDataPage() {
 
   return (
     <div className="viewdata-page">
+      {showLoader && (
+        <PageLoader
+          pageName="Master"
+          isDataLoading={loading}
+          onComplete={() => setShowLoader(false)}
+        />
+      )}
+
       {error && (
         <p className="viewdata-error" role="alert">
           {error}

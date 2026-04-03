@@ -383,3 +383,96 @@
   padding: 0.75rem 1.5rem;
   font-size: 1.125rem;
 }
+
+/* ============================================ */
+/* ICON BUTTONS FOR SAVE/CANCEL/DELETE */
+/* ============================================ */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  color: inherit;
+}
+
+.icon-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Save Button */
+.icon-btn--save {
+  color: #059669;
+}
+
+.icon-btn--save:hover:not(:disabled) {
+  background-color: rgba(5, 150, 105, 0.1);
+  color: #059669;
+  transform: translateY(-2px);
+}
+
+/* Cancel Button */
+.icon-btn--cancel {
+  color: #dc2626;
+}
+
+.icon-btn--cancel:hover:not(:disabled) {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+  transform: translateY(-2px);
+}
+
+/* Delete Button */
+.icon-btn--delete {
+  color: #dc2626;
+}
+
+.icon-btn--delete:hover:not(:disabled) {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+  transform: scale(1.1);
+}
+
+/* Size variants */
+.icon-btn--small {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0.25rem;
+}
+
+.icon-btn--medium {
+  width: 2rem;
+  height: 2rem;
+  padding: 0.5rem;
+}
+
+.icon-btn--large {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.75rem;
+}
+
+/* Icon buttons with label */
+.icon-btn--with-label {
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+}
+
+.icon-btn--with-label svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-label {
+  display: inline;
+}

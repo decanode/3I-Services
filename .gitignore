@@ -3,3 +3,5 @@ node_modules/
 backend/config/serviceAccountKey.json
 package-lock.json
 dist
+.credentials.md/
+.claude

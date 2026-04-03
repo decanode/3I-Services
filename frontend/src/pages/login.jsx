@@ -5,9 +5,10 @@ import { apiUrl } from '../utils/api';
 import { AnimatedButton, Dropdown, cityOptions, COUNTRY_OPTIONS } from '../components/Button';
 import DatePicker from '../components/datepicker';
 import Loader from '../components/loader';
-import { 
-  Scale, FileText, Network, Smartphone, Code, Settings, 
-  CheckCircle2, ChevronRight, Zap, Briefcase, Globe, Cpu, Palette, Lock 
+import {
+  Scale, FileText, Network, Smartphone, Code, Settings,
+  CheckCircle2, ChevronRight, Zap, Briefcase, Globe, Cpu, Palette, Lock,
+  Bell, Users, FileSpreadsheet, Mail
 } from 'lucide-react';
 import card1 from '../images/cards/card1.jpg';
 import card2 from '../images/cards/card2.jpg';
@@ -15,6 +16,14 @@ import card3 from '../images/cards/card3.png';
 import card4 from '../images/cards/card4.png';
 import card5 from '../images/cards/card5.png';
 import card6 from '../images/cards/card6.png';
+import card7 from '../images/cards/card7.jpg';
+import card8 from '../images/cards/card8.jpg';
+import card9 from '../images/cards/card9.jpg';
+import card10 from '../images/cards/card10.jpg';
+import card11 from '../images/cards/card11.jpg';
+import card12 from '../images/cards/card12.jpg';
+import card13 from '../images/cards/card13.jpg';
+import card14 from '../images/cards/card14.jpg';
 
 const CONFIG = {
   carousel: {
@@ -24,8 +33,8 @@ const CONFIG = {
     spreadX: 40,
     dropY: 0.90,
     // Card dimensions (responsive: mobile sm  / tablet md  / desktop lg )
-    cardWidth: { sm: 280, md: 320, lg: 600},   // in pixels
-    cardHeight: { sm: 380, md: 450, lg: 600},  // in pixels
+    cardWidth: { sm: 100, md: 200, lg: 600},   // in pixels
+    cardHeight: { sm: 100, md: 450, lg: 590},  // in pixels
   },
   theme: {
     accentColor: '#fbbf24',    // Golden amber - complements maroon
@@ -47,10 +56,10 @@ const Icons = {
 
 // --- CAROUSEL CARDS DATA - NEW DESIGN WITH IMAGES ---
 const SERVICES_CARDS = [
-  { 
-    id: 1, 
-    title: 'Regulatory Compliance', 
-    keyword: 'compliance', 
+  {
+    id: 1,
+    title: 'Regulatory Compliance',
+    keyword: 'compliance',
     icon: Lock,
     iconColor: 'text-amber-600',
     gradientFrom: 'from-amber-400',
@@ -62,10 +71,10 @@ const SERVICES_CARDS = [
       { text: 'Licence Fee & Budget Management', type: 'dot' }
     ]
   },
-  { 
-    id: 2, 
-    title: 'Licence Operations', 
-    keyword: 'licensing', 
+  {
+    id: 2,
+    title: 'Licence Operations',
+    keyword: 'licensing',
     icon: Briefcase,
     iconColor: 'text-blue-600',
     gradientFrom: 'from-blue-400',
@@ -77,10 +86,10 @@ const SERVICES_CARDS = [
       { text: 'Compliance Tracking', type: 'dot' }
     ]
   },
-  { 
-    id: 3, 
-    title: 'Network Solutions', 
-    keyword: 'networking', 
+  {
+    id: 3,
+    title: 'Network Solutions',
+    keyword: 'networking',
     icon: Globe,
     iconColor: 'text-teal-600',
     gradientFrom: 'from-teal-400',
@@ -92,10 +101,10 @@ const SERVICES_CARDS = [
       { text: 'Performance Monitoring', type: 'dot' }
     ]
   },
-  { 
-    id: 4, 
-    title: 'Mobile Development', 
-    keyword: 'mobile solutions', 
+  {
+    id: 4,
+    title: 'Mobile Development',
+    keyword: 'mobile solutions',
     icon: Smartphone,
     iconColor: 'text-purple-600',
     gradientFrom: 'from-purple-400',
@@ -107,10 +116,10 @@ const SERVICES_CARDS = [
       { text: 'Premium User Experiences', type: 'dot' }
     ]
   },
-  { 
-    id: 5, 
-    title: 'Web Development', 
-    keyword: 'web innovation', 
+  {
+    id: 5,
+    title: 'Web Development',
+    keyword: 'web innovation',
     icon: Palette,
     iconColor: 'text-emerald-600',
     gradientFrom: 'from-emerald-400',
@@ -122,10 +131,10 @@ const SERVICES_CARDS = [
       { text: 'SEO & Performance Optimized', type: 'dot' }
     ]
   },
-  { 
-    id: 6, 
-    title: 'Enterprise Software', 
-    keyword: 'enterprise solutions', 
+  {
+    id: 6,
+    title: 'Enterprise Software',
+    keyword: 'enterprise solutions',
     icon: Cpu,
     iconColor: 'text-red-600',
     gradientFrom: 'from-red-400',
@@ -135,6 +144,126 @@ const SERVICES_CARDS = [
     features: [
       { text: 'End-to-End Integration', type: 'dot' },
       { text: 'Scalable Architecture', type: 'dot' }
+    ]
+  },
+  {
+    id: 7,
+    title: 'Data Analytics',
+    keyword: 'data insights',
+    icon: Code,
+    iconColor: 'text-indigo-600',
+    gradientFrom: 'from-indigo-400',
+    gradientTo: 'to-blue-500',
+    image: card7,
+    desc: 'Advanced Data Analytics & Business Intelligence',
+    features: [
+      { text: 'Real-time Data Visualization', type: 'dot' },
+      { text: 'Predictive Analytics', type: 'dot' }
+    ]
+  },
+  {
+    id: 8,
+    title: 'Ledger Management',
+    keyword: 'ledger control',
+    icon: FileText,
+    iconColor: 'text-blue-600',
+    gradientFrom: 'from-blue-400',
+    gradientTo: 'to-cyan-500',
+    image: card8,
+    desc: 'Complete Ledger Remainder & Outstanding Management',
+    features: [
+      { text: 'Track outstanding balances', type: 'dot' },
+      { text: 'Manage ledger details efficiently', type: 'dot' }
+    ]
+  },
+  {
+    id: 9,
+    title: 'Excel Integration',
+    keyword: 'data import',
+    icon: FileSpreadsheet,
+    iconColor: 'text-green-600',
+    gradientFrom: 'from-green-400',
+    gradientTo: 'to-emerald-500',
+    image: card9,
+    desc: 'Upload & Manage Excel Files with Validation',
+    features: [
+      { text: 'Batch upload ledger data', type: 'dot' },
+      { text: 'Automatic data validation', type: 'dot' }
+    ]
+  },
+  {
+    id: 10,
+    title: 'Smart Notifications',
+    keyword: 'alerts',
+    icon: Bell,
+    iconColor: 'text-red-600',
+    gradientFrom: 'from-red-400',
+    gradientTo: 'to-rose-500',
+    image: card10 ,
+    desc: 'Automated Reminders & Collection Notifications',
+    features: [
+      { text: 'Schedule follow-up calls', type: 'dot' },
+      { text: 'Real-time notification alerts', type: 'dot' }
+    ]
+  },
+  {
+    id: 11,
+    title: 'Activity Logging',
+    keyword: 'audit trail',
+    icon: FileText,
+    iconColor: 'text-purple-600',
+    gradientFrom: 'from-purple-400',
+    gradientTo: 'to-pink-500',
+    image: card11,
+    desc: 'Complete Activity Logs & Audit Trail',
+    features: [
+      { text: 'Track all system changes', type: 'dot' },
+      { text: 'Generate compliance reports', type: 'dot' }
+    ]
+  },
+  {
+    id: 12,
+    title: 'Team Management',
+    keyword: 'team control',
+    icon: Users,
+    iconColor: 'text-amber-600',
+    gradientFrom: 'from-amber-400',
+    gradientTo: 'to-orange-500',
+    image: card12,
+    desc: 'User & Employee Management System',
+    features: [
+      { text: 'Manage user roles & permissions', type: 'dot' },
+      { text: 'Track employee activities', type: 'dot' }
+    ]
+  },
+  {
+    id: 13,
+    title: 'Email Notifications',
+    keyword: 'communication',
+    icon: Mail,
+    iconColor: 'text-orange-600',
+    gradientFrom: 'from-orange-400',
+    gradientTo: 'to-red-500',
+    image: card13,
+    desc: 'Automated Email Notifications with Nodemailer',
+    features: [
+      { text: 'Send automated email alerts & reminders', type: 'dot' },
+      { text: 'Collect customer feedback via email', type: 'dot' }
+    ]
+  },
+  {
+    id: 14,
+    title: 'Admin Panel',
+    keyword: 'administration',
+    icon: Settings,
+    iconColor: 'text-slate-600',
+    gradientFrom: 'from-slate-400',
+    gradientTo: 'to-gray-500',
+    image: card14,
+    desc: 'Complete Admin Control & Configuration',
+    features: [
+      { text: 'Approve/reject user registrations', type: 'dot' },
+      { text: 'System settings & configurations', type: 'dot' }
     ]
   },
 ];
@@ -148,7 +277,26 @@ export default function LoginPage() {
   const [activePanel, setActivePanel] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const currentCards = SERVICES_CARDS;
+  // Function to arrange cards in specific order: 1, 8, 2, 9, 3, 10, 4, 11, 5, 12, 6, 13, 7, 14
+  const arrangeCardsInOrder = () => {
+    const order = [1, 8, 2, 9, 3, 10, 4, 11, 5, 12, 6, 13, 7, 14];
+    return order.map(id => SERVICES_CARDS.find(card => card.id === id));
+  };
+
+  // Memoized cards based on active panel
+  const currentCards = useMemo(() => {
+    if (activePanel === null) {
+      // Normal view: show all 14 cards in the specific order
+      return arrangeCardsInOrder();
+    } else if (activePanel === 'login') {
+      // Login view: show cards 1-7 in order
+      return [1, 2, 3, 4, 5, 6, 7].map(id => SERVICES_CARDS.find(card => card.id === id));
+    } else if (activePanel === 'signup') {
+      // Signup view: show cards 8-14 in order
+      return [8, 9, 10, 11, 12, 13, 14].map(id => SERVICES_CARDS.find(card => card.id === id));
+    }
+    return [];
+  }, [activePanel]);
   
   // Forms State
   const [formData, setFormData] = useState({
@@ -681,12 +829,17 @@ export default function LoginPage() {
                   className={`relative shadow-2xl rounded-3xl flex flex-col overflow-hidden transition-all duration-700 cursor-default`}
                   style={{
                     width: `${CONFIG.carousel.cardWidth.lg}px`,
-                    height: `${CONFIG.carousel.cardHeight.lg}px`,
+                    height: `${card.id >= 8 && card.id <= 14 ? CONFIG.carousel.cardHeight.lg + 200 : CONFIG.carousel.cardHeight.lg}px`,
                     background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%)',
                   }}
                 >
                   {/* Top Image Section */}
-                  <div className="relative h-96 overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
+                  <div 
+                    className="relative overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100"
+                    style={{
+                      height: `${card.id >= 8 && card.id <= 14 ? '550px' : '384px'}`
+                    }}
+                  >
                     <img 
                       src={card.image} 
                       alt={card.title}
@@ -704,16 +857,37 @@ export default function LoginPage() {
                     )}
                     {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/30 pointer-events-none"></div>
+                    
+                    {/* Icon at Bottom Right */}
+                    <div 
+                      className="absolute bottom-2 right-2 w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
+                      style={{
+                        background: `linear-gradient(135deg, ${
+                          card.gradientFrom === 'from-amber-400' ? '#fbbf24' : 
+                          card.gradientFrom === 'from-blue-400' ? '#60a5fa' : 
+                          card.gradientFrom === 'from-teal-400' ? '#2dd4bf' : 
+                          card.gradientFrom === 'from-purple-400' ? '#c4b5fd' : 
+                          card.gradientFrom === 'from-emerald-400' ? '#6ee7b7' : 
+                          '#f87171'
+                        }, ${
+                          card.gradientTo === 'to-orange-500' ? '#f97316' : 
+                          card.gradientTo === 'to-cyan-500' ? '#06b6d4' : 
+                          card.gradientTo === 'to-emerald-500' ? '#10b981' : 
+                          card.gradientTo === 'to-pink-500' ? '#ec4899' : 
+                          card.gradientTo === 'to-green-500' ? '#22c55e' : 
+                          '#e11d48'
+                        })`
+                      }}
+                    >
+                      {React.createElement(card.icon, { size: 20, strokeWidth: 2, className: 'text-white drop-shadow-lg' })}
+                    </div>
                   </div>
 
                   {/* Content Section */}
                   <div className="flex flex-col flex-1 p-7 lg:p-8 relative z-10">
                     {/* Header with Icon */}
                     <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-2xl lg:text-2xl font-black text-gray-900 tracking-tight leading-tight flex-1">{card.title}</h3>
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ml-3 shadow-lg bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo}`}>
-                        {React.createElement(card.icon, { size: 24, strokeWidth: 2, className: 'text-white drop-shadow-lg' })}
-                      </div>
+                      <h3 className="text-2xl lg:text-2xl font-black text-gray-900 tracking-tight leading-tight">{card.title}</h3>
                     </div>
 
                     {/* Description with Colorful Background */}

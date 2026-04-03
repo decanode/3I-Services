@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, AlertCircle } from 'lucide-react';
 import { apiUrl } from '../utils/api';
 import { Button } from '../components/Button';
+import PageLoader from '../components/loading';
 import '../styles/pagestyles/view-log.css';
 
 // Helper function to check if a field was updated
@@ -42,6 +43,7 @@ const updatedCellStyles = {
 export default function ViewLogPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showLoader, setShowLoader] = useState(true);
   const [error, setError] = useState(null);
   
   // Filters
@@ -211,6 +213,14 @@ export default function ViewLogPage() {
 
   return (
     <div className="view-log-page">
+      {showLoader && (
+        <PageLoader
+          pageName="Activity Logs"
+          isDataLoading={loading}
+          onComplete={() => setShowLoader(false)}
+        />
+      )}
+
       <div className="view-log-header">
         <h2>Ledger Activity Logs</h2>
       </div>

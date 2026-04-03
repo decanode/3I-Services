@@ -202,7 +202,7 @@ const sendOtpEmail = async ({ email, firstName, otp }) => {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
-      subject: '🔐 Password Reset OTP - 3i Services - 7FS',
+      subject: 'Password Reset OTP - 3i Services - 7FS',
       html: `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 700px; margin: 0 auto; background-color: #f5f5f5; padding: 20px;">
           <!-- Header -->
@@ -213,10 +213,7 @@ const sendOtpEmail = async ({ email, firstName, otp }) => {
 
           <!-- Main Content -->
           <div style="background-color: #ffffff; padding: 40px 30px;">
-            <div style="border-left: 5px solid #3b82f6; padding-left: 20px; margin-bottom: 30px;">
-              <h2 style="color: #1e40af; margin: 0 0 10px 0; font-size: 22px;">Password Reset OTP</h2>
-              <p style="color: #666; margin: 0; font-size: 14px;">Hello${firstName ? ` ${firstName}` : ''}, use the OTP below to reset your password.</p>
-            </div>
+            <h2 style="color: #1e40af; margin: 0 0 20px 0; font-size: 22px;">Hello${firstName ? ` ${firstName}` : ''}</h2>
 
             <!-- OTP Box -->
             <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 30px; border-radius: 10px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(30,64,175,0.2);">
@@ -225,46 +222,9 @@ const sendOtpEmail = async ({ email, firstName, otp }) => {
                 <span style="color: #ffffff; font-size: 42px; font-weight: 700; letter-spacing: 10px; font-family: 'Courier New', monospace;">${otp}</span>
               </div>
               <p style="color: rgba(255,255,255,0.8); margin: 0; font-size: 12px;">
-                ⏱️ This code expires in <strong>${validityText}</strong>
+                 This code expires in <strong>${validityText}</strong>
               </p>
             </div>
-
-            <!-- Information Card -->
-            <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 25px;">
-              <p style="margin: 0; color: #1e40af; font-size: 13px; line-height: 1.6;">
-                <strong>🔒 Security Reminder:</strong><br>
-                • Never share this OTP with anyone<br>
-                • We will never ask for your OTP via email<br>
-                • This code is for single use only<br>
-                • If you didn't request this, please ignore
-              </p>
-            </div>
-
-            <!-- Action Button -->
-            <div style="text-align: center; margin-bottom: 25px;">
-              <a href="#" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 14px;">
-                Return to Login
-              </a>
-            </div>
-
-            <!-- Warning -->
-            <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #eab308;">
-              <p style="color: #92400e; margin: 0; font-size: 13px;">
-                ⚠️ <strong>Important:</strong> If you didn't request a password reset, please change your password immediately after logging in.
-              </p>
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div style="background: #1f2937; color: #e5e7eb; padding: 25px 30px; text-align: center; border-radius: 0 0 12px 12px; font-size: 12px;">
-            <p style="margin: 0 0 10px 0;">
-              <strong>3i Services - 7FS</strong><br>
-              Regulatory & Technology Solutions
-            </p>
-            <p style="margin: 0; color: #9ca3af; font-size: 11px;">
-              © 2024 3i Services. All rights reserved.<br>
-              This is an automated email. Please do not reply directly.
-            </p>
           </div>
         </div>
       `

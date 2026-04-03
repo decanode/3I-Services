@@ -1,7 +1,7 @@
 {
-  "name": "magizh-backend",
+  "name": "3iServices-backend",
   "version": "1.0.0",
-  "description": "Backend API for Magizh Employee Management System",
+  "description": "Backend API for 3iServices",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

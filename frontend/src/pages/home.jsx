@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Users, UserPlus, Clock, Mail, Check, X, Trash2, IdCard, Shield, User as UserIcon, ArrowUpRight, ArrowDownRight, MapPin, Activity } from 'lucide-react';
+import { Users, UserPlus, Clock, Mail, Check, X, Trash2, IdCard, Shield, User as UserIcon, Bell, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
 import Alert from '../components/Alert';
+import PageLoader from '../components/loading';
 import { RemainderCard } from './Remainder';
 import '../styles/pagestyles/home.css';
 
@@ -25,12 +25,27 @@ function initials(first, last) {
   return (a + b).toUpperCase() || '?';
 }
 
-function AdminDashboard({ isEmployeeCardExpanded, setIsEmployeeCardExpanded }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+function AdminDashboard({ isEmployeeCardExpanded, setIsEmployeeCardExpanded, adminData, setAdminData, activeAdminList, setActiveAdminList }) {
+  const [data, setData] = useState(adminData);
+  const [loading, setLoading] = useState(!adminData);
   const [error, setError] = useState(null);
-  const [activeList, setActiveList] = useState('employees');
   const [alertState, setAlertState] = useState(null);
+
+  // Scroll to top when activeAdminList changes
+  useEffect(() => {
+    if (activeAdminList === 'requests') {
+      console.log('Switching to requests view');
+      // Scroll the entire page to top
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Also try scrolling parent container if exists
+        const container = document.querySelector('.home-page-container');
+        if (container) {
+          container.scrollTop = 0;
+        }
+      }, 100);
+    }
+  }, [activeAdminList]);
 
   const promptDeleteUser = (userId, userName) => {
     setAlertState({
@@ -175,23 +190,31 @@ function AdminDashboard({ isEmployeeCardExpanded, setIsEmployeeCardExpanded }) {
       if (res.status === 403) {
         setError('You do not have admin access.');
         setData(null);
+        setAdminData(null);
         return;
       }
       if (!res.ok) {
         throw new Error(json.message || json.error || 'Failed to load');
       }
       setData(json);
+      setAdminData(json);
     } catch (e) {
       setError(e.message || 'Failed to load dashboard');
       setData(null);
+      setAdminData(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setAdminData]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!adminData) {
+      load();
+    } else {
+      setData(adminData);
+      setLoading(false);
+    }
+  }, [adminData, load]);
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -239,16 +262,16 @@ function AdminDashboard({ isEmployeeCardExpanded, setIsEmployeeCardExpanded }) {
               <div className="admin-dash__toggle">
                 <button
                   type="button"
-                  className={`admin-dash__toggle-btn ${activeList === 'employees' ? 'admin-dash__toggle-btn--active' : ''}`}
-                  onClick={() => setActiveList('employees')}
+                  className={`admin-dash__toggle-btn ${activeAdminList === 'employees' ? 'admin-dash__toggle-btn--active' : ''}`}
+                  onClick={() => setActiveAdminList('employees')}
                 >
                   <Users size={16} />
                   Employees
                 </button>
                 <button
                   type="button"
-                  className={`admin-dash__toggle-btn ${activeList === 'requests' ? 'admin-dash__toggle-btn--active' : ''}`}
-                  onClick={() => setActiveList('requests')}
+                  className={`admin-dash__toggle-btn ${activeAdminList === 'requests' ? 'admin-dash__toggle-btn--active' : ''}`}
+                  onClick={() => setActiveAdminList('requests')}
                 >
                   <UserPlus size={16} />
                   Requests
@@ -259,7 +282,7 @@ function AdminDashboard({ isEmployeeCardExpanded, setIsEmployeeCardExpanded }) {
               </div>
             </div>
 
-            {activeList === 'employees' && (
+            {activeAdminList === 'employees' && (
               <div className="admin-dash__table-wrap">
                 <table className="admin-dash__table">
                   <thead>
@@ -346,7 +369,7 @@ function AdminDashboard({ isEmployeeCardExpanded, setIsEmployeeCardExpanded }) {
               </div>
             )}
 
-            {activeList === 'requests' && (
+            {activeAdminList === 'requests' && (
               <div className="admin-dash__requests">
                 {(data.pendingRequests || []).length === 0 ? (
                   <div className="admin-dash__requests-empty">
@@ -439,18 +462,87 @@ export default function HomePage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [isEmployeeCardExpanded, setIsEmployeeCardExpanded] = useState(false);
+  const [adminData, setAdminData] = useState(null);
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
+  const [activeAdminList, setActiveAdminList] = useState('employees');
+  const [initialLoading, setInitialLoading] = useState(isAdmin);
+  const [showLoader, setShowLoader] = useState(true);
+
+  // Handle bell click to navigate to requests (toggle)
+  const handleBellClick = useCallback(() => {
+    console.log('Bell clicked, current state:', { isEmployeeCardExpanded, activeAdminList });
+    
+    // If already on requests view, collapse it
+    if (isEmployeeCardExpanded && activeAdminList === 'requests') {
+      console.log('Closing requests view...');
+      setActiveAdminList('employees');
+      setIsEmployeeCardExpanded(false);
+    } else {
+      // Otherwise open requests view
+      console.log('Opening requests view...');
+      setIsEmployeeCardExpanded(true);
+      setTimeout(() => {
+        setActiveAdminList('requests');
+      }, 50);
+    }
+  }, [isEmployeeCardExpanded, activeAdminList]);
+
+  // Load admin data
+  useEffect(() => {
+    if (isAdmin) {
+      const loadAdminData = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setInitialLoading(false);
+          return;
+        }
+        try {
+          const res = await fetch(apiUrl('/api/admin/dashboard'), {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const json = await res.json().catch(() => ({}));
+          if (res.ok) {
+            setAdminData(json);
+            setPendingRequestCount(json.pendingRequests?.length || 0);
+          }
+        } catch (e) {
+          console.error('Failed to load admin data:', e);
+        } finally {
+          setInitialLoading(false);
+        }
+      };
+      loadAdminData();
+    } else {
+      setInitialLoading(false);
+    }
+  }, [isAdmin]);
 
   return (
     <div className={`home-page-container`}>
+      {showLoader && (
+        <PageLoader
+          pageName="Dashboard"
+          isDataLoading={initialLoading}
+          onComplete={() => setShowLoader(false)}
+        />
+      )}
+
       <UserGreetingBanner 
         user={user} 
         onEmployeeCardClick={() => setIsEmployeeCardExpanded(!isEmployeeCardExpanded)}
         isEmployeeCardExpanded={isEmployeeCardExpanded}
+        activeAdminList={activeAdminList}
+        pendingRequestCount={pendingRequestCount}
+        onBellClick={handleBellClick}
       />
       {isAdmin ? (
         <AdminDashboard 
           isEmployeeCardExpanded={isEmployeeCardExpanded}
           setIsEmployeeCardExpanded={setIsEmployeeCardExpanded}
+          adminData={adminData}
+          setAdminData={setAdminData}
+          activeAdminList={activeAdminList}
+          setActiveAdminList={setActiveAdminList}
         />
       ) : (
         <EmployeeHome user={user} />
@@ -459,7 +551,7 @@ export default function HomePage() {
   );
 }
 
-function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded }) {
+function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded, activeAdminList, pendingRequestCount = 0, onBellClick }) {
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';
   const role = user?.role || 'Employee';
   const idValue = user?.empId || user?.userId || 'N/A';
@@ -482,6 +574,32 @@ function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded 
           <h1 className="user-greeting-sentence__value">{greeting}, <span className="user-greeting-sentence__name">{name}</span>!</h1>
           <p className="user-greeting-sentence__role">You are logged in as <span>{role}</span></p>
         </div>
+        {/* Bell Icon for Admin Notifications */}
+        {isAdmin && pendingRequestCount > 0 && (
+          <div 
+            className="user-greeting-notification-bell" 
+            title={isEmployeeCardExpanded && activeAdminList === 'requests' ? 'Click to close requests' : `${pendingRequestCount} pending request(s) - Click to view`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Bell click triggered');
+              onBellClick?.();
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                console.log('Bell keyboard triggered');
+                onBellClick?.();
+              }
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            <Bell size={24} className="notification-bell-icon" />
+            <span className="notification-badge">{pendingRequestCount}</span>
+          </div>
+        )}
       </div>
 
       {/* Bottom Row - Detail Cards Grid */}

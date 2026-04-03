@@ -198,3 +198,58 @@ export const GradientSubmitButton = ({
     </AnimatedButton>
   );
 };
+
+// Icon Buttons for Save/Cancel Actions
+export const SaveButton = ({ onClick, disabled = false, size = 'medium', title = 'Save', className = '', showLabel = false }) => {
+  return (
+    <button
+      className={`icon-btn icon-btn--save icon-btn--${size} ${showLabel ? 'icon-btn--with-label' : ''} ${className}`}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      type="button"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+        <polyline points="7 3 7 8 15 8"></polyline>
+      </svg>
+      {showLabel && <span className="btn-label">{title}</span>}
+    </button>
+  );
+};
+
+export const CancelButton = ({ onClick, disabled = false, size = 'medium', title = 'Cancel', className = '', showLabel = false }) => {
+  return (
+    <button
+      className={`icon-btn icon-btn--cancel icon-btn--${size} ${showLabel ? 'icon-btn--with-label' : ''} ${className}`}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      type="button"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+      {showLabel && <span className="btn-label">{title}</span>}
+    </button>
+  );
+};
+
+export const DeleteButton = ({ onClick, disabled = false, size = 'medium', title = 'Delete', className = '' }) => {
+  return (
+    <button
+      className={`icon-btn icon-btn--delete icon-btn--${size} ${className}`}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      type="button"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  );
+};
