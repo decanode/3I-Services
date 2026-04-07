@@ -828,7 +828,7 @@ export default function LoginPage() {
                   className={`relative shadow-2xl rounded-3xl flex flex-col overflow-hidden transition-all duration-700 cursor-default`}
                   style={{
                     width: `${CONFIG.carousel.cardWidth.lg}px`,
-                    height: `${card.id >= 8 && card.id <= 14 ? CONFIG.carousel.cardHeight.lg + 200 : CONFIG.carousel.cardHeight.lg}px`,
+                    height: `${CONFIG.carousel.cardHeight.lg}px`,
                     background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%)',
                   }}
                 >
@@ -836,7 +836,7 @@ export default function LoginPage() {
                   <div 
                     className="relative overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100"
                     style={{
-                      height: `${card.id >= 8 && card.id <= 14 ? '550px' : '384px'}`
+                      height: '384px'
                     }}
                   >
                     <img 
