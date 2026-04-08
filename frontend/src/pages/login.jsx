@@ -267,11 +267,7 @@ const SERVICES_CARDS = [
 export default function LoginPage() {
   const isScrolling = useRef(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
-  
-  // Skip loader if navigated from logout
-  const fromLogout = location.state?.fromLogout;
 
   // UI Flow State
   const [activePanel, setActivePanel] = useState(null);
@@ -592,7 +588,7 @@ export default function LoginPage() {
 
   return (
     <>
-      {!fromLogout && <Loader />}
+      <Loader />
       <div className="relative w-full h-screen overflow-hidden flex flex-col items-center justify-center font-sans bg-rose-50">
       
       {/* Dynamic Background Pattern */}

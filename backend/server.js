@@ -4,7 +4,6 @@ const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const path = require('path');
 const passwordController = require('./controllers/password');
-
 dotenv.config();
 
 // Routes
@@ -23,7 +22,7 @@ const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
 
 // CORS
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: process.env.CORS_ORIGIN,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -69,8 +68,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-const PORT = process.env.PORT || 5000;
-
+const PORT = process.env.PORT ;
 // OTP cleanup runs once per OTP validity period
 const OTP_VALID_TIME = (parseInt(process.env.OTP_VALID_TIME) || 120) * 1000;
 setInterval(async () => {

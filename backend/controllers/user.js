@@ -58,8 +58,8 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const ALLOWED_FIELDS = [
-      'firstName', 'lastName', 'fatherName', 'dob', 'phone', 'countryCode',
-      'city', 'street', 'doorNo', 'state', 'pincode', 'aadhar', 'pan'
+      'firstName', 'lastName', 'fatherName', 'dob', 'email', 'phone', 'countryCode',
+      'acity', 'street', 'doorNo', 'state', 'pincode', 'aadhar', 'pan'
     ];
 
     const updateData = {};

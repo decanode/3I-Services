@@ -1,36 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { User, Lock, Pencil, X, Save, Eye, EyeOff, Settings, CheckCircle2, AlertCircle, MapPin, CreditCard } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Pencil, X, Save, Eye, EyeOff, Settings, AlertCircle, MapPin, CreditCard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
 import Alert from './Alert';
 import '../styles/componentstyles/userprofile.css';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function maskAadhar(val) {
-  if (!val || val.length < 4) return val || '—';
-  return 'XXXX-XXXX-' + val.slice(-4);
-}
-
-function maskPan(val) {
-  if (!val || val.length < 4) return val || '—';
-  return val.slice(0, 2) + 'XXXXXXX' + val.slice(-1);
-}
-
-function formatDob(val) {
-  if (!val) return '—';
-  const parts = val.split('-');
-  if (parts.length !== 3) return val;
-  return `${parts[2]}-${parts[1]}-${parts[0]}`;
-}
-
-function emptyVal(v) {
-  return v === undefined || v === null || v === '' ? '—' : v;
-}
 
 const EMPTY_FORM = {
   firstName: '', lastName: '', fatherName: '', dob: '',
-  phone: '', countryCode: '', city: '', street: '',
+  email: '', phone: '', countryCode: '', acity: '', street: '',
   doorNo: '', state: '', pincode: '', aadhar: '', pan: ''
 };
 
@@ -40,9 +18,10 @@ function profileToForm(profile) {
     lastName:    profile?.lastName    || '',
     fatherName:  profile?.fatherName  || '',
     dob:         profile?.dob         || '',
+    email:       profile?.email       || '',
     phone:       profile?.phone       || '',
     countryCode: profile?.countryCode || '',
-    city:        profile?.city        || '',
+    acity:       profile?.acity       || '',
     street:      profile?.street      || '',
     doorNo:      profile?.doorNo      || '',
     state:       profile?.state       || '',
@@ -69,36 +48,21 @@ const InputField = ({ label, name, value, onChange, placeholder, type = "text", 
   </div>
 );
 
-// Reusable View Field Component
-const ViewField = ({ label, value, isMasked }) => {
-  const displayValue = emptyVal(value);
-  const isEmpty = displayValue === '—';
-
-  return (
-    <div className="profile-field">
-      <span className="profile-field-label">{label}</span>
-      <span className={`profile-field-value ${isEmpty ? 'empty' : isMasked ? 'masked' : ''}`}>
-        {displayValue}
-      </span>
-    </div>
-  );
-};
-
 export default function UserProfilePage() {
   useAuth();
 
-  const [profile, setProfile]       = useState(null);
-  const [isEditing, setIsEditing]   = useState(false);
+  const [profile, setProfile]           = useState(null);
+  const [isEditing, setIsEditing]       = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [form, setForm]             = useState(EMPTY_FORM);
-  const [pwForm, setPwForm]         = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
-  const [showPw, setShowPw]         = useState({ old: false, new: false, confirm: false });
-  const [loading, setLoading]       = useState(true);
-  const [saving, setSaving]         = useState(false);
-  const [pwSaving, setPwSaving]     = useState(false);
-  const [alert, setAlert]           = useState(null);
+  const [form, setForm]                 = useState(EMPTY_FORM);
+  const [pwForm, setPwForm]             = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
+  const [showPw, setShowPw]             = useState({ old: false, new: false, confirm: false });
+  const [loading, setLoading]           = useState(true);
+  const [saving, setSaving]             = useState(false);
+  const [pwSaving, setPwSaving]         = useState(false);
+  const [alert, setAlert]               = useState(null);
   const [profileError, setProfileError] = useState('');
-  const [pwError, setPwError]       = useState('');
+  const [pwError, setPwError]           = useState('');
 
   // ── Fetch profile ──────────────────────────────────────────────────────────
 
@@ -106,35 +70,22 @@ export default function UserProfilePage() {
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        const res = await apiFetch('/user/profile');
+        const res = await apiFetch('/api/user/profile');
         const data = await res.json();
-        
-        if (!res.ok) throw new Error('API failed, falling back to mock data');
-        
+
+        if (!res.ok) throw new Error(data.message || 'Failed to load profile');
+
         setProfile(data.user);
         setForm(profileToForm(data.user));
-      } catch {
-        // Mock data fallback
-        const mockProfile = {
-          role: 'Admin',
-          firstName: 'Decanode',
-          lastName: 'Dev',
-          fatherName: 'Jamesh',
-          dob: '1995-10-15',
-          phone: '9876543210',
-          countryCode: '+91',
-          email: 'abc@gmail.com',
-          userId: 'dev001',
-          doorNo: 'Flat 40B',
-          street: 'Main Tech Road',
-          city: 'Chennai',
-          state: 'Tamil Nadu',
-          pincode: '600001',
-          aadhar: '123456789012',
-          pan: 'ABCDE1234F'
-        };
-        setProfile(mockProfile);
-        setForm(profileToForm(mockProfile));
+      } catch (e) {
+        setProfile(null);
+        setAlert({
+          type: 'error',
+          title: 'Failed to Load Profile',
+          message: e.message || 'Could not load your profile. Please refresh.',
+          onConfirm: () => setAlert(null),
+          onCancel: () => setAlert(null),
+        });
       } finally {
         setLoading(false);
       }
@@ -142,13 +93,7 @@ export default function UserProfilePage() {
     fetchProfile();
   }, []);
 
-  // ── Edit handlers ──────────────────────────────────────────────────────────
-
-  const handleEditToggle = () => {
-    setForm(profileToForm(profile));
-    setProfileError('');
-    setIsEditing(true);
-  };
+  // ── Form handlers ──────────────────────────────────────────────────────────
 
   const handleCancel = () => {
     setForm(profileToForm(profile));
@@ -162,7 +107,8 @@ export default function UserProfilePage() {
   };
 
   const validateForm = () => {
-    const { phone, pincode, aadhar, pan } = form;
+    const { email, phone, pincode, aadhar, pan } = form;
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
     if (phone && !/^\d{10}$/.test(phone)) return 'Phone number must be exactly 10 digits.';
     if (pincode && !/^\d{6}$/.test(pincode)) return 'Pincode must be exactly 6 digits.';
     if (aadhar && !/^\d{12}$/.test(aadhar)) return 'Aadhaar must be exactly 12 digits.';
@@ -181,18 +127,39 @@ export default function UserProfilePage() {
     setProfileError('');
     setSaving(true);
     try {
-      const res = await apiFetch('/user/profile', {
+      const res = await apiFetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       });
       const data = await res.json();
-      if (!res.ok) { setProfileError(data.message || 'Failed to update profile.'); return; }
+      if (!res.ok) {
+        setAlert({
+          type: 'error',
+          title: 'Update Failed',
+          message: data.message || 'Failed to update profile.',
+          onConfirm: () => setAlert(null),
+          onCancel: () => setAlert(null),
+        });
+        return;
+      }
       setProfile(data.user);
+      setForm(profileToForm(data.user));
       setIsEditing(false);
-      setAlert({ type: 'success', title: 'Profile Updated', message: 'Your profile has been saved successfully.', onConfirm: () => setAlert(null) });
+      setAlert({
+        type: 'success',
+        title: 'Profile Updated',
+        message: 'Your profile has been saved successfully.',
+        onConfirm: () => setAlert(null),
+      });
     } catch {
-      setProfileError('Network error. Please try again.');
+      setAlert({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Could not reach the server. Please try again.',
+        onConfirm: () => setAlert(null),
+        onCancel: () => setAlert(null),
+      });
     } finally {
       setSaving(false);
     }
@@ -220,14 +187,13 @@ export default function UserProfilePage() {
 
     setPwSaving(true);
     try {
-      const res = await apiFetch('/user/password', {
+      const res = await apiFetch('/api/user/password', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldPassword, newPassword, confirmPassword })
       });
       if (res.status === 401) {
         const data = await res.json();
-        // Distinguish wrong password vs expired token
         if (data.message === 'Current password is incorrect') {
           setPwError('Current password is incorrect.');
         } else {
@@ -236,11 +202,32 @@ export default function UserProfilePage() {
         return;
       }
       const data = await res.json();
-      if (!res.ok) { setPwError(data.message || 'Failed to change password.'); return; }
+      if (!res.ok) {
+        setAlert({
+          type: 'error',
+          title: 'Password Change Failed',
+          message: data.message || 'Failed to change password.',
+          onConfirm: () => setAlert(null),
+          onCancel: () => setAlert(null),
+        });
+        return;
+      }
       setPwForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
-      setAlert({ type: 'success', title: 'Password Changed', message: 'Your password has been updated successfully.', onConfirm: () => setAlert(null) });
+      setShowSettings(false);
+      setAlert({
+        type: 'success',
+        title: 'Password Changed',
+        message: 'Your password has been updated successfully.',
+        onConfirm: () => setAlert(null),
+      });
     } catch {
-      setPwError('Network error. Please try again.');
+      setAlert({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Could not reach the server. Please try again.',
+        onConfirm: () => setAlert(null),
+        onCancel: () => setAlert(null),
+      });
     } finally {
       setPwSaving(false);
     }
@@ -250,16 +237,15 @@ export default function UserProfilePage() {
 
   if (loading) {
     return (
-      <div className="profile-loading-container">
-        <div className="profile-loading-content">
-          <div className="profile-spinner"></div>
-          <p className="profile-loading-text">Loading your profile...</p>
-        </div>
+      <div className="profile-container">
+        <Alert
+          type="loading"
+          title="Loading Profile"
+          message="Please wait while we fetch your details..."
+        />
       </div>
     );
   }
-
-  const fullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || '—';
 
   return (
     <div className="profile-container">
@@ -297,7 +283,7 @@ export default function UserProfilePage() {
               <div className="profile-actions">
                 {!isEditing && (
                   <button
-                    onClick={handleEditToggle}
+                    onClick={() => setIsEditing(true)}
                     className="profile-btn-edit"
                   >
                     <Pencil size={18} />
@@ -307,16 +293,9 @@ export default function UserProfilePage() {
                 <button
                   onClick={() => setShowSettings(!showSettings)}
                   className={`profile-btn-settings ${showSettings ? 'active' : ''}`}
-                  title="Settings / Password"
                 >
-                  <Settings size={20} />
-                </button>
-                <button
-                  disabled={profile?.userId === 'admin'}
-                  className="profile-btn-delete"
-                  title={profile?.userId === 'admin' ? 'Admin users cannot be deleted' : 'Delete Account'}
-                >
-                  <X size={20} />
+                  <Settings size={18} />
+                  <span>Change Password</span>
                 </button>
               </div>
             </div>
@@ -334,121 +313,75 @@ export default function UserProfilePage() {
               <h2 className="profile-section-title">Personal Information</h2>
             </div>
 
-            {/* View Mode */}
-            {!isEditing && (
-              <div>
-                {/* Basic Info */}
-                <div className="profile-fields-grid">
-                  <ViewField label="First Name" value={profile?.firstName} />
-                  <ViewField label="Last Name" value={profile?.lastName} />
-                  <ViewField label="Father Name" value={profile?.fatherName} />
-                  <ViewField label="Date of Birth" value={profile?.dob ? formatDob(profile.dob) : ''} />
-                  <ViewField label="Phone" value={profile?.phone ? `${profile.countryCode || ''} ${profile.phone}`.trim() : ''} />
-                  <ViewField label="Email" value={profile?.email} />
-                </div>
+            <form onSubmit={handleSave}>
 
-                {/* Address Section */}
-                <div className="profile-subsection">
-                  <div className="profile-section-header">
-                    <div className="profile-section-icon">
-                      <MapPin size={20} />
-                    </div>
-                    <h3 className="profile-section-title">Address Details</h3>
+              {/* Basic Info */}
+              <div className="profile-fields-grid">
+                <InputField label="First Name" name="firstName" value={form.firstName} onChange={handleFormChange} placeholder="John" readOnly={!isEditing} />
+                <InputField label="Last Name" name="lastName" value={form.lastName} onChange={handleFormChange} placeholder="Doe" readOnly={!isEditing} />
+                <InputField label="Father Name" name="fatherName" value={form.fatherName} onChange={handleFormChange} placeholder="Father's Name" readOnly={!isEditing} />
+                <InputField label="Date of Birth" name="dob" type="date" value={form.dob} onChange={handleFormChange} readOnly={!isEditing} />
+                <InputField label="Email" name="email" type="email" value={form.email} onChange={handleFormChange} placeholder="john@example.com" readOnly={!isEditing} />
+                <div className="profile-input-group">
+                  <div>
+                    <InputField label="Code" name="countryCode" value={form.countryCode} onChange={handleFormChange} placeholder="+91" readOnly={!isEditing} />
                   </div>
-                  <div className="profile-address-grid">
-                    <ViewField label="Door No" value={profile?.doorNo} />
-                    <ViewField label="Street" value={profile?.street} />
-                    <ViewField label="City" value={profile?.city} />
-                    <ViewField label="State" value={profile?.state} />
-                    <ViewField label="Pincode" value={profile?.pincode} />
-                  </div>
-                </div>
-
-                {/* Identity Section */}
-                <div className="profile-subsection">
-                  <div className="profile-section-header">
-                    <div className="profile-section-icon">
-                      <CreditCard size={20} />
-                    </div>
-                    <h3 className="profile-section-title">Identity Documents</h3>
-                  </div>
-                  <div className="profile-subsection-content">
-                    <ViewField label="Aadhaar Number" value={maskAadhar(profile?.aadhar)} isMasked />
-                    <ViewField label="PAN Card" value={maskPan(profile?.pan)} isMasked />
+                  <div>
+                    <InputField label="Phone Number" name="phone" value={form.phone} onChange={handleFormChange} placeholder="9876543210" maxLength={10} readOnly={!isEditing} />
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Edit Mode Form */}
-            {isEditing && (
-              <form onSubmit={handleSave} style={{ animation: 'fadeIn 0.3s' }}>
+              {/* Address Section */}
+              <div className="profile-subsection">
+                <div className="profile-section-header">
+                  <div className="profile-section-icon">
+                    <MapPin size={20} />
+                  </div>
+                  <h3 className="profile-section-title">Address Details</h3>
+                </div>
+                <div className="profile-address-grid">
+                  <InputField label="Door No / Flat" name="doorNo" value={form.doorNo} onChange={handleFormChange} placeholder="40B" readOnly={!isEditing} />
+                  <InputField label="Street / Area" name="street" value={form.street} onChange={handleFormChange} placeholder="Main Road" readOnly={!isEditing} />
+                  <InputField label="City" name="acity" value={form.acity} onChange={handleFormChange} placeholder="Chennai" readOnly={!isEditing} />
+                  <InputField label="State" name="state" value={form.state} onChange={handleFormChange} placeholder="Tamil Nadu" readOnly={!isEditing} />
+                  <InputField label="Pincode" name="pincode" value={form.pincode} onChange={handleFormChange} placeholder="600001" maxLength={6} readOnly={!isEditing} />
+                </div>
+              </div>
 
-                {/* Basic Info */}
+              {/* Identity Section */}
+              <div className="profile-subsection">
+                <div className="profile-section-header">
+                  <div className="profile-section-icon">
+                    <CreditCard size={20} />
+                  </div>
+                  <h3 className="profile-section-title">Identity Documents</h3>
+                </div>
                 <div className="profile-fields-grid">
-                  <InputField label="Email (Read Only)" value={profile?.email || ''} readOnly />
-                  <InputField label="First Name" name="firstName" value={form.firstName} onChange={handleFormChange} placeholder="John" />
-                  <InputField label="Last Name" name="lastName" value={form.lastName} onChange={handleFormChange} placeholder="Doe" />
-                  <InputField label="Father Name" name="fatherName" value={form.fatherName} onChange={handleFormChange} placeholder="Father's Name" />
-                  <InputField label="Date of Birth" name="dob" type="date" value={form.dob} onChange={handleFormChange} />
-                  <div className="profile-input-group">
-                    <div>
-                      <InputField label="Code" name="countryCode" value={form.countryCode} onChange={handleFormChange} placeholder="+91" />
-                    </div>
-                    <div>
-                      <InputField label="Phone Number" name="phone" value={form.phone} onChange={handleFormChange} placeholder="9876543210" maxLength={10} />
-                    </div>
-                  </div>
+                  <InputField label="Aadhaar (12 Digits)" name="aadhar" value={form.aadhar} onChange={handleFormChange} placeholder="123456789012" maxLength={12} readOnly={!isEditing} />
+                  <InputField label="PAN Card" name="pan" value={form.pan} onChange={handleFormChange} placeholder="ABCDE1234F" maxLength={10} readOnly={!isEditing} />
                 </div>
+              </div>
 
-                {/* Address Section */}
-                <div className="profile-subsection">
-                  <div className="profile-section-header">
-                    <div className="profile-section-icon">
-                      <MapPin size={20} />
+              {/* Validation Error & Actions — only in edit mode */}
+              {isEditing && (
+                <>
+                  {profileError && (
+                    <div className="profile-error">
+                      <AlertCircle size={18} /> {profileError}
                     </div>
-                    <h3 className="profile-section-title">Address Details</h3>
+                  )}
+                  <div className="profile-action-row">
+                    <button type="button" onClick={handleCancel} disabled={saving} className="profile-btn profile-btn-secondary">
+                      <X size={18} /> Cancel
+                    </button>
+                    <button type="submit" disabled={saving} className="profile-btn profile-btn-primary">
+                      <Save size={18} /> {saving ? 'Saving Changes...' : 'Save Profile Changes'}
+                    </button>
                   </div>
-                  <div className="profile-address-grid">
-                    <InputField label="Door No / Flat" name="doorNo" value={form.doorNo} onChange={handleFormChange} placeholder="40B" />
-                    <InputField label="Street / Area" name="street" value={form.street} onChange={handleFormChange} placeholder="Main Road" />
-                    <InputField label="City" name="city" value={form.city} onChange={handleFormChange} placeholder="Chennai" />
-                    <InputField label="State" name="state" value={form.state} onChange={handleFormChange} placeholder="Tamil Nadu" />
-                    <InputField label="Pincode" name="pincode" value={form.pincode} onChange={handleFormChange} placeholder="600001" maxLength={6} />
-                  </div>
-                </div>
-
-                {/* Identity Section */}
-                <div className="profile-subsection">
-                  <div className="profile-section-header">
-                    <div className="profile-section-icon">
-                      <CreditCard size={20} />
-                    </div>
-                    <h3 className="profile-section-title">Identity Documents</h3>
-                  </div>
-                  <div className="profile-fields-grid">
-                    <InputField label="Aadhaar (12 Digits)" name="aadhar" value={form.aadhar} onChange={handleFormChange} placeholder="123456789012" maxLength={12} />
-                    <InputField label="PAN Card" name="pan" value={form.pan} onChange={handleFormChange} placeholder="ABCDE1234F" maxLength={10} />
-                  </div>
-                </div>
-
-                {/* Error & Actions */}
-                {profileError && (
-                  <div className="profile-error">
-                    <AlertCircle size={18} /> {profileError}
-                  </div>
-                )}
-
-                <div className="profile-action-row">
-                  <button type="button" onClick={handleCancel} disabled={saving} className="profile-btn profile-btn-secondary">
-                    <X size={18} /> Cancel
-                  </button>
-                  <button type="submit" disabled={saving} className="profile-btn profile-btn-primary">
-                    <Save size={18} /> {saving ? 'Saving Changes...' : 'Save Profile Changes'}
-                  </button>
-                </div>
-              </form>
-            )}
+                </>
+              )}
+            </form>
           </div>
         </div>
       </div>
@@ -458,7 +391,7 @@ export default function UserProfilePage() {
         <div className="profile-modal-overlay">
           <div className="profile-modal">
             <button
-              onClick={() => setShowSettings(false)}
+              onClick={() => { setShowSettings(false); setPwError(''); }}
               className="profile-modal-close"
             >
               <X size={20} />
@@ -466,7 +399,7 @@ export default function UserProfilePage() {
 
             <div className="profile-section-header">
               <div className="profile-section-icon">
-                <Lock size={20} />
+                <Settings size={20} />
               </div>
               <h2 className="profile-section-title">Security Settings</h2>
             </div>
@@ -532,7 +465,7 @@ export default function UserProfilePage() {
               )}
 
               <button type="submit" disabled={pwSaving} className="profile-btn profile-btn-primary" style={{ width: '100%', marginTop: '1.5rem', justifyContent: 'center' }}>
-                <Lock size={18} /> {pwSaving ? 'Updating...' : 'Update Password'}
+                {pwSaving ? 'Updating...' : 'Update Password'}
               </button>
             </form>
           </div>

@@ -466,17 +466,7 @@ export default function NotifyDetailPage() {
       )}
 
       <div className="ledger-card">
-        {/* Back button — positioned absolutely in the top-right of ledger-card */}
-        <div style={{ position: 'absolute', top: '1.4rem', right: '1.4rem', zIndex: 1 }}>
-          <BackButton
-            onClick={() => navigate(-1)}
-            title="Go Back"
-            size="medium"
-            showLabel={true}
-          />
-        </div>
-
-        {/* Header: title + group badge + bank summary cards */}
+        {/* Header: title + group badge + bank summary cards + back button */}
         <div className="ledger-header-wrapper">
           <div className="ledger-title-wrapper">
             <User className="ledger-icon" size={24} />
@@ -510,6 +500,13 @@ export default function NotifyDetailPage() {
               </div>
             </div>
           )}
+
+          <BackButton
+            onClick={() => navigate(-1)}
+            title="Go Back"
+            size="medium"
+            showLabel={true}
+          />
         </div>
 
         {alert && (

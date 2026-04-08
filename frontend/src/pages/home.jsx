@@ -251,7 +251,8 @@ function AdminDashboard({ isEmployeeCardExpanded, setIsEmployeeCardExpanded, adm
                               type="button"
                               className="ad__act-btn ad__act-btn--delete"
                               onClick={() => promptDeleteUser(row.empId, [row.firstName, row.lastName].filter(Boolean).join(' '))}
-                              disabled={!!alertState}
+                              disabled={!!alertState || row.role === 'admin'}
+                              title={row.role === 'admin' ? 'Admin users cannot be deleted' : undefined}
                             >
                               <Trash2 size={20} />
                             </button>

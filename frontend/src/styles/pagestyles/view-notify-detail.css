@@ -38,9 +38,11 @@
 
 .ledger-header-wrapper {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 0.8rem;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 
@@ -76,6 +78,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 0.8rem;
   flex: 1;
+  min-width: 0;
 }
 
 .summary-card {
