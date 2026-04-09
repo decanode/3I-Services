@@ -14,7 +14,9 @@ if (fs.existsSync(serviceAccountPath)) {
 }
 
 admin.initializeApp({ credential });
-console.log("Firebase Connected");
+const dbId = process.env.FIRESTORE_DB_ID;
 const db = admin.firestore();
+db.settings({ databaseId: dbId });
+console.log(`Firebase Connected → Firestore DB: ${dbId}`);
 const auth = admin.auth();
 module.exports = { admin, db, auth };
