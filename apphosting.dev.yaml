@@ -49,7 +49,7 @@ env:
   # UPDATE after first deploy — your main backend URL
   - variable: CORS_ORIGIN
     availability: [RUNTIME]
-    value: "https://threeiservices-crm-prd--i-services-crm.asia-southeast1.hosted.app"
+    value: "https://threeiservices-crm-dev--i-services-crm.asia-southeast1.hosted.app"
   #declare of database use for production or development
   - variable: FIRESTORE_DB_ID
     availability: [RUNTIME]
