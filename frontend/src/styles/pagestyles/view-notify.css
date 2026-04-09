@@ -194,23 +194,42 @@
 /* Responsive */
 @media (max-width: 768px) {
   .notify-header {
-    padding: 1.5rem;
+    padding: 0.75rem 1rem;
   }
 
-  .notify-header h1 {
-    font-size: 1.5rem;
+  .notify-header-text {
+    display: none;
+  }
+
+  .page-back-btn {
+    display: none;
+  }
+
+  .notify-search {
+    max-width: 100%;
   }
 
   .notify-table-section {
-    padding: 0.5rem;
+    padding: 0;
+  }
+
+  .notify-table-container {
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
   }
 
   .notify-table {
     font-size: 0.85rem;
+    min-width: unset;
+    width: 100%;
+    table-layout: auto;
   }
 
   .notify-table th,
   .notify-table td {
     padding: 0.75rem 0.5rem;
+    white-space: normal;
+    word-break: break-word;
   }
 }

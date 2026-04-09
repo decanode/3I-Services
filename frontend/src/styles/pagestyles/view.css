@@ -193,36 +193,54 @@
 }
 
 @media (max-width: 768px) {
+  .view-page {
+    padding: 0.5rem 0.75rem;
+    justify-content: flex-start;
+  }
+
   .portal-cards-grid {
     flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    max-width: 420px;
+    align-items: stretch;
+    gap: 0.6rem;
+    max-width: 100%;
+    width: 100%;
+    height: calc(100dvh - 3.5rem);
+    margin: 0;
   }
 
   .portal-card {
-    --portal-card-size: 420px;
-    flex: 0 1 auto;
+    flex: 1 1 0;
     width: 100%;
-    max-width: 420px;
+    max-width: 100%;
+    min-width: 0;
     aspect-ratio: auto;
-    min-height: 300px;
-    height: auto;
+    min-height: 0;
+    height: 0;
+    padding: 0.75rem 1rem;
+    border-radius: 0.875rem;
   }
 
   .portal-card-icon {
-    width: 72px;
-    height: 72px;
+    width: 44px;
+    height: 44px;
+    border-radius: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .portal-card-icon svg {
+    width: 24px;
+    height: 24px;
   }
 
   .portal-card-title {
-    font-size: 1.25rem;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
   }
 
   .portal-card-desc {
-    font-size: 0.95rem;
-    -webkit-line-clamp: 6;
-    line-clamp: 6;
+    font-size: 0.8rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 }
 

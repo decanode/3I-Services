@@ -41,14 +41,45 @@ export default function ViewLogPage() {
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all'); // all, credit, debit
-  const [dateFromInput, setDateFromInput] = useState('');
-  const [dateToInput, setDateToInput] = useState('');
   const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
   const [sortOrder, setSortOrder] = useState('desc');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(20);
+
+  // Filter modal state
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [tempDateFrom, setTempDateFrom] = useState('');
+  const [tempDateTo, setTempDateTo] = useState(() => new Date().toISOString().split('T')[0]);
+
+  const today = () => new Date().toISOString().split('T')[0];
+
+  const handleFilterApply = () => {
+    setDateFrom(tempDateFrom);
+    setDateTo(tempDateTo || today());
+    setCurrentPage(1);
+    setShowFilterModal(false);
+  };
+
+  const handleFilterCancel = () => {
+    setTempDateFrom(dateFrom);
+    setTempDateTo(dateTo);
+    setShowFilterModal(false);
+  };
+
+  const handleFilterClear = (e) => {
+    e.stopPropagation();
+    const t = today();
+    setDateFrom(''); setDateTo(t);
+    setTempDateFrom(''); setTempDateTo(t);
+    setCurrentPage(1);
+  };
+
+  const formatShort = (iso) => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  };
 
   // Download modal state
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -248,25 +279,16 @@ export default function ViewLogPage() {
       );
     }
 
-    // Date filter
+    // Date filter — only active when dateFrom is set; dateTo defaults to today
     if (dateFrom) {
       const from = new Date(dateFrom);
       from.setHours(0, 0, 0, 0);
-      if (dateTo) {
-        const to = new Date(dateTo);
-        to.setHours(23, 59, 59, 999);
-        result = result.filter(log => {
-          const ts = new Date(log.timestamp);
-          return ts >= from && ts <= to;
-        });
-      } else {
-        const fromEnd = new Date(dateFrom);
-        fromEnd.setHours(23, 59, 59, 999);
-        result = result.filter(log => {
-          const ts = new Date(log.timestamp);
-          return ts >= from && ts <= fromEnd;
-        });
-      }
+      const to = new Date(dateTo || new Date());
+      to.setHours(23, 59, 59, 999);
+      result = result.filter(log => {
+        const ts = new Date(log.timestamp);
+        return ts >= from && ts <= to;
+      });
     }
 
     // Sort by timestamp
@@ -320,77 +342,98 @@ export default function ViewLogPage() {
           value={searchTerm}
           onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
         />
-        <div className="view-log-date-filters" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 500 }}>From</span>
-          <DatePicker
-            value={dateFromInput}
-            onChange={(val) => { setDateFromInput(val); if (!val) setDateToInput(''); }}
-            className="view-log-datepicker"
-          />
-          <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 500, opacity: dateFromInput ? 1 : 0.4 }}>To</span>
-          <DatePicker
-            value={dateToInput}
-            onChange={(val) => { setDateToInput(val); }}
-            disabled={!dateFromInput}
-            className="view-log-datepicker"
-          />
-          <button
-            type="button"
-            title="Apply date filter"
-            onClick={() => { setDateFrom(dateFromInput); setDateTo(dateToInput); setCurrentPage(1); }}
-            style={{ background: dateFromInput ? '#2563eb' : 'transparent', border: dateFromInput ? '1px solid #2563eb' : '1px solid #d1d5db', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-          >
-            <Filter size={15} color={dateFromInput ? '#fff' : '#9ca3af'} />
-          </button>
-          {(dateFrom || dateTo) && (
+        <div className="view-log-filter-row">
+          <div className="view-log-toggles">
+            <Button
+              variant={filterType === 'all' ? 'primary' : 'outline'}
+              onClick={() => { setFilterType('all'); setCurrentPage(1); }}
+            >
+              All Updates
+            </Button>
+            <Button
+              variant={filterType === 'credit' ? 'credit' : 'outline'}
+              onClick={() => { setFilterType('credit'); setCurrentPage(1); }}
+              className={filterType === 'credit' ? 'active' : ''}
+            >
+              Credit
+            </Button>
+            <Button
+              variant={filterType === 'debit' ? 'debit' : 'outline'}
+              onClick={() => { setFilterType('debit'); setCurrentPage(1); }}
+              className={filterType === 'debit' ? 'active' : ''}
+            >
+              Debit
+            </Button>
+          </div>
+          <div className="view-log-actions">
             <button
               type="button"
-              title="Clear date filter"
-              onClick={() => { setDateFromInput(''); setDateToInput(''); setDateFrom(''); setDateTo(''); setCurrentPage(1); }}
-              style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+              className={`view-log-filter-btn${dateFrom ? ' active' : ''}`}
+              onClick={() => { setTempDateFrom(dateFrom); setTempDateTo(dateTo); setShowFilterModal(true); }}
             >
-              <X size={15} color="#ef4444" />
+              <Filter size={14} />
+              <span className="filter-btn-label">
+                {dateFrom ? `${formatShort(dateFrom)} – ${formatShort(dateTo)}` : 'Filter'}
+              </span>
+              {dateFrom && (
+                <span className="filter-btn-clear" onClick={handleFilterClear}>
+                  <X size={12} />
+                </span>
+              )}
             </button>
-          )}
-        </div>
-        <div className="view-log-toggles">
-          <Button
-            variant={filterType === 'all' ? 'primary' : 'outline'}
-            onClick={() => { setFilterType('all'); setCurrentPage(1); }}
-          >
-            All Updates
-          </Button>
-          <Button
-            variant={filterType === 'credit' ? 'credit' : 'outline'}
-            onClick={() => { setFilterType('credit'); setCurrentPage(1); }}
-            className={filterType === 'credit' ? 'active' : ''}
-          >
-            Credit
-          </Button>
-          <Button
-            variant={filterType === 'debit' ? 'debit' : 'outline'}
-            onClick={() => { setFilterType('debit'); setCurrentPage(1); }}
-            className={filterType === 'debit' ? 'active' : ''}
-          >
-            Debit
-          </Button>
-          <button
-            type="button"
-            title="Download as Excel"
-            onClick={() => setShowDownloadModal(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
-              border: '1px solid #16a34a', background: '#f0fdf4',
-              color: '#16a34a', fontWeight: 500, fontSize: '0.8rem',
-              transition: 'all 0.2s',
-            }}
-          >
-            <FileDown size={15} />
-            Excel
-          </button>
+            <button
+              type="button"
+              title="Download as Excel"
+              onClick={() => setShowDownloadModal(true)}
+              className="view-log-excel-btn"
+            >
+              <FileDown size={14} />
+              Excel
+            </button>
+          </div>
         </div>
       </div>
+
+      {showFilterModal && (
+        <div
+          className="filter-modal-backdrop"
+          onClick={(e) => { if (e.target === e.currentTarget) handleFilterCancel(); }}
+        >
+          <div className="filter-modal-card">
+            <div className="filter-modal-header">
+              <div className="filter-modal-icon">
+                <Filter size={18} color="#2563eb" />
+              </div>
+              <h3 className="filter-modal-title">Filter by Date</h3>
+            </div>
+            <div className="filter-modal-fields">
+              <div className="filter-modal-field">
+                <label className="filter-modal-label">From Date</label>
+                <DatePicker
+                  value={tempDateFrom}
+                  onChange={(val) => { setTempDateFrom(val); if (!val) setTempDateTo(today()); }}
+                  flow="currentMonth"
+                />
+              </div>
+              <div className="filter-modal-field">
+                <label className="filter-modal-label" style={{ opacity: tempDateFrom ? 1 : 0.5 }}>To Date</label>
+                <DatePicker
+                  value={tempDateTo}
+                  onChange={setTempDateTo}
+                  flow="currentMonth"
+                />
+              </div>
+            </div>
+            <div className="filter-modal-actions">
+              <Button variant="outline" onClick={handleFilterCancel}>Cancel</Button>
+              <button type="button" className="filter-apply-btn" onClick={handleFilterApply}>
+                <Filter size={14} />
+                Filter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDownloadModal && (
         <div
@@ -411,7 +454,6 @@ export default function ViewLogPage() {
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1f2937' }}>Export to Excel</h3>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: '#9ca3af' }}>Select date range or leave blank for last 60 days</p>
               </div>
             </div>
 

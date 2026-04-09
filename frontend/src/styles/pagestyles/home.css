@@ -538,20 +538,99 @@
 }
 
 @media (max-width: 640px) {
-  .ub__cards,
-  .ub__cards-integrated { grid-template-columns: repeat(2, 1fr); }
+  /* Cards: 3 equal columns for info cards, manage spans full width */
+  .ub__cards-integrated {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .ub__cards-integrated .ub__card--manage {
+    grid-column: 1 / -1;
+  }
 
   .ub__greeting {
-    flex-direction: column;
     padding: 1.25rem;
     gap: 1rem;
     margin-bottom: 1rem;
+    text-align: left;
   }
 
-  .ub__greeting-header { flex-direction: column; }
-  .ub__greeting-icon  { width: 3rem; height: 3rem; }
-  .ub__greeting-title { font-size: 1.25rem; }
-  .ub__greeting-role  { font-size: 0.8125rem; }
+  /* Header stays as row: icon on left, title next to it */
+  .ub__greeting-header {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .ub__greeting-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+  }
+
+  .ub__greeting-text {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ub__greeting-title { font-size: 1.1rem; }
+
+  /* Hide "You are logged in as..." on mobile */
+  .ub__greeting-role { display: none; }
+
+  /* All cards: center-align content on mobile */
+  .ub__cards-integrated .ub__card {
+    align-items: center;
+    padding: 0.65rem 0.5rem;
+    min-height: 4rem;
+    gap: 0.4rem;
+  }
+
+  .ub__cards-integrated .ub__card-body {
+    align-items: center;
+    text-align: center;
+  }
+
+  .ub__cards-integrated .ub__card-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+  }
+
+  .ub__cards-integrated .ub__card-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .ub__cards-integrated .ub__card-label { font-size: 0.5625rem; }
+  .ub__cards-integrated .ub__card-value { font-size: 0.75rem; }
+
+  /* Manage card: same column layout as other cards, consistent styling */
+  .ub__cards-integrated .ub__card--manage {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .ub__cards-integrated .ub__card--manage .ub__card-body {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+
+  .ub__cards-integrated .ub__card--manage .ub__card-label {
+    display: none;
+  }
+
+  .ub__cards-integrated .ub__card--manage .ub__card-value {
+    font-size: 0.9375rem;
+    color: #0f172a;
+  }
 
   .ad__panel--open { padding: 1rem; margin: 0.75rem 1rem; width: calc(100% - 2rem); }
 }

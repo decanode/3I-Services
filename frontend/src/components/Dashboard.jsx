@@ -40,6 +40,7 @@ export default function Dashboard({ activeTab, children }) {
     view: 'Ledger View',
     'view-master': 'Master Data',
     notify: 'Notifications',
+    'view-notify': 'Ledger Notifications',
     'view-notify-detail': 'Notification Detail',
     'view-log': 'Activity Logs',
     'view-outstandings': 'Outstandings',

@@ -1,5 +1,4 @@
 .view-log-page {
-  /* Local Color Definitions */
   --color-neutral-dark: #1a1a1a;
   --color-neutral-gray-400: #a8a8a8;
   --color-neutral-gray-200: #dddddd;
@@ -10,11 +9,11 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  
   padding: 20px;
   gap: 20px;
 }
 
+/* ── Header ─────────────────────────────────────────── */
 .view-log-header {
   display: flex;
   justify-content: space-between;
@@ -29,36 +28,211 @@
   color: var(--color-neutral-dark);
 }
 
+/* ── Filter Card ─────────────────────────────────────── */
 .view-log-filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.75rem;
   background: white;
   padding: 1.25rem;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  overflow: visible;
   position: relative;
   z-index: 20;
 }
 
 .view-log-search {
-  flex: 1;
-  min-width: 300px;
+  width: 100%;
+}
+
+/* Second row: toggles left, actions right */
+.view-log-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .view-log-toggles {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
+.view-log-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ── Filter trigger button ───────────────────────────── */
+.view-log-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.view-log-filter-btn:hover {
+  border-color: #9ca3af;
+  background: #f3f4f6;
+}
+
+.view-log-filter-btn.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.filter-btn-label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-btn-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #bfdbfe;
+  color: #1d4ed8;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.filter-btn-clear:hover {
+  background: #93c5fd;
+}
+
+/* ── Excel button ────────────────────────────────────── */
+.view-log-excel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #16a34a;
+  background: #f0fdf4;
+  color: #16a34a;
+  font-weight: 500;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.view-log-excel-btn:hover {
+  background: #dcfce7;
+}
+
+/* ── Filter modal ────────────────────────────────────── */
+.filter-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-modal-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  width: 90%;
+  max-width: 360px;
+}
+
+.filter-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-modal-icon {
+  background: #eff6ff;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-shrink: 0;
+}
+
+.filter-modal-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.filter-modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.filter-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-modal-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.filter-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.filter-apply-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.filter-apply-btn:hover {
+  background: #1d4ed8;
+}
+
+/* ── Content area ────────────────────────────────────── */
 .view-log-content {
   flex: 1;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Restore card look */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -70,7 +244,8 @@
   flex: 1;
 }
 
-.view-log-error, .view-log-empty {
+.view-log-error,
+.view-log-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -90,6 +265,7 @@
   margin: 2rem;
 }
 
+/* ── Pagination ──────────────────────────────────────── */
 .log-pagination {
   display: flex;
   align-items: center;
@@ -99,7 +275,7 @@
   margin-bottom: 0.5rem;
 }
 
-/* Custom Table Resizing */
+/* ── Table ───────────────────────────────────────────── */
 .view-log-table-container table {
   table-layout: auto;
   width: 100%;
@@ -116,7 +292,6 @@
   font-size: 1.05rem;
 }
 
-/* Custom Table with Row Highlighting */
 .view-log-custom-table {
   width: 100%;
   border-collapse: collapse;
@@ -148,8 +323,6 @@
   background-color: #f9fafb;
 }
 
-
-
 .view-log-custom-table tbody td {
   padding: 1rem 0.75rem;
   text-align: center;
@@ -157,127 +330,72 @@
   color: #475569;
 }
 
-/* Compact DatePicker for log filters */
-.view-log-date-filters .heroui-datepicker {
-  width: auto;
+/* ── DatePicker popover z-index ──────────────────────── */
+.filter-modal-card .date-picker-popover {
+  z-index: 300;
 }
 
-.view-log-datepicker {
-  position: relative;
-  width: 130px;
-  height: 32px;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  padding: 0 0.4rem;
-  display: flex;
-  align-items: center;
-  gap: 0.15rem;
-  transition: all 0.2s ease;
-  box-shadow: none;
-  font-size: 0.78rem;
-  cursor: pointer;
-}
-
-.view-log-datepicker:hover {
-  border-color: #9ca3af;
-}
-
-.view-log-datepicker[data-focused="true"] {
-  border-color: var(--color-info, #2A4759);
-  box-shadow: 0 0 0 2px rgba(42, 71, 89, 0.1);
-}
-
-.view-log-datepicker[data-disabled="true"] {
-  opacity: 0.4;
-  cursor: not-allowed;
-  background-color: #f9fafb;
-}
-
-.view-log-datepicker .date-field-input {
-  font-size: 0.78rem;
-}
-
-.view-log-datepicker .date-segment {
-  font-size: 0.78rem;
-}
-
-.view-log-datepicker .date-picker-trigger {
-  padding: 0;
-}
-
-.view-log-datepicker .date-picker-trigger svg {
-  width: 14px;
-  height: 14px;
-}
-
-.view-log-datepicker .form-input-icon {
-  display: none;
-}
-
-/* Ensure popover opens below and above table */
-.view-log-date-filters .date-picker-popover {
-  z-index: 100;
-  animation: fadeInDown 0.15s ease-out;
-}
-.view-log-date-filters .date-picker-popover.open-upward {
-  animation: fadeInUp 0.15s ease-out;
-  transform-origin: bottom center;
-}
-
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+/* ── Responsive: Tablet ──────────────────────────────── */
 @media (max-width: 768px) {
-  .view-log-filters {
+  .view-log-filter-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .view-log-search {
-    min-width: 100%;
+  .view-log-toggles {
+    width: 100%;
+    justify-content: center;
   }
 
-  .view-log-toggles {
-    justify-content: center;
+  .view-log-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 
+/* ── Responsive: Mobile ──────────────────────────────── */
 @media (max-width: 640px) {
-  .view-log-header h2 {
+  .view-log-header {
     display: none;
   }
 
   .view-log-filters {
-    flex-direction: column;
-    gap: 0.75rem;
     padding: 1rem;
+    gap: 0.65rem;
   }
 
-  .view-log-search {
-    min-width: 100%;
-  }
-
-  .view-log-date-filters {
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-    align-items: center;
-    width: 100%;
-  }
-
-  .view-log-datepicker {
-    flex: 1;
-    min-width: 100px;
+  .view-log-filter-row {
+    flex-direction: column;
+    gap: 0.65rem;
   }
 
   .view-log-toggles {
+    width: 100%;
+    gap: 0.4rem;
+  }
+
+  .view-log-toggles > * {
+    flex: 1;
     justify-content: center;
-    flex-wrap: wrap;
+    text-align: center;
+  }
+
+  .view-log-actions {
+    width: 100%;
+    gap: 0.4rem;
+  }
+
+  .view-log-filter-btn,
+  .view-log-excel-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 9px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+  }
+
+  .filter-btn-label {
+    max-width: 100px;
   }
 }

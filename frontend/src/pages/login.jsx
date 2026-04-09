@@ -30,8 +30,8 @@ const CONFIG = {
     spreadX: 40,
     dropY: 10,
     // Card dimensions (responsive: mobile sm  / tablet md  / desktop lg )
-    cardWidth: { sm: 260, md: 340, lg: 600},   // in pixels
-    cardHeight: { sm: 380, md: 500, lg: 600},  // in pixels
+    cardWidth: { sm: 240, md: 400, lg: 600},   // in pixels
+    cardHeight: { sm: 360, md: 400, lg: 600},  // in pixels
   },
   theme: {
     accentColor: '#fbbf24',    // Golden amber - complements maroon
@@ -847,7 +847,7 @@ export default function LoginPage() {
                   <div
                     className="relative overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100"
                     style={{
-                      height: cardSize === 'sm' ? '180px' : cardSize === 'md' ? '260px' : '384px'
+                      height: cardSize === 'sm' ? '148px' : cardSize === 'md' ? '200px' : '320px'
                     }}
                   >
                     <img 
@@ -869,8 +869,8 @@ export default function LoginPage() {
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/30 pointer-events-none"></div>
                     
                     {/* Icon at Bottom Right */}
-                    <div 
-                      className="absolute bottom-2 right-2 w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
+                    <div
+                      className={`absolute bottom-2 right-2 flex items-center justify-center shadow-md ${cardSize === 'sm' ? 'w-7 h-7 rounded-lg' : 'w-10 h-10 rounded-xl'}`}
                       style={{
                         background: `linear-gradient(135deg, ${
                           card.gradientFrom === 'from-amber-400' ? '#fbbf24' : 
@@ -889,39 +889,39 @@ export default function LoginPage() {
                         })`
                       }}
                     >
-                      {React.createElement(card.icon, { size: 20, strokeWidth: 2, className: 'text-white drop-shadow-lg' })}
+                      {React.createElement(card.icon, { size: cardSize === 'sm' ? 14 : 20, strokeWidth: 2, className: 'text-white drop-shadow-lg' })}
                     </div>
                   </div>
 
                   {/* Content Section */}
-                  <div className="flex flex-col flex-1 p-7 lg:p-8 relative z-10">
+                  <div className={`flex flex-col flex-1 relative z-10 ${cardSize === 'sm' ? 'p-3' : cardSize === 'md' ? 'p-5' : 'p-8'}`}>
                     {/* Header with Icon */}
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-2xl lg:text-2xl font-black text-gray-900 tracking-tight leading-tight">{card.title}</h3>
+                    <div className={`flex items-start justify-between ${cardSize === 'sm' ? 'mb-2' : 'mb-4'}`}>
+                      <h3 className={`font-black text-gray-900 tracking-tight leading-tight ${cardSize === 'sm' ? 'text-base' : cardSize === 'md' ? 'text-xl' : 'text-2xl'}`}>{card.title}</h3>
                     </div>
 
                     {/* Description with Colorful Background */}
-                    <div className={`mb-5 p-4 rounded-2xl transition-all duration-500`}
+                    <div className={`rounded-xl transition-all duration-500 ${cardSize === 'sm' ? 'mb-2 p-2' : cardSize === 'md' ? 'mb-3 p-3' : 'mb-5 p-4 rounded-2xl'}`}
                       style={{
                         background: `linear-gradient(135deg, ${card.gradientFrom === 'from-amber-400' ? 'rgba(251,191,36,0.12)' : card.gradientFrom === 'from-blue-400' ? 'rgba(96,165,250,0.12)' : card.gradientFrom === 'from-teal-400' ? 'rgba(45,212,191,0.12)' : card.gradientFrom === 'from-purple-400' ? 'rgba(196,181,253,0.12)' : card.gradientFrom === 'from-emerald-400' ? 'rgba(110,231,183,0.12)' : 'rgba(248,113,113,0.12)'}, rgba(255,255,255,0.8))`,
                       }}
                     >
-                      <p className="text-gray-700 text-sm lg:text-base font-semibold leading-relaxed">
+                      <p className={`text-gray-700 font-semibold leading-snug ${cardSize === 'sm' ? 'text-xs' : cardSize === 'md' ? 'text-sm' : 'text-base leading-relaxed'}`}>
                         {card.desc}
                       </p>
                     </div>
 
                     {/* Features */}
                     <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
-                      <div className="space-y-2.5">
+                      <div className={cardSize === 'sm' ? 'space-y-1' : 'space-y-2.5'}>
                         {card.features && card.features.map((feature, idx) => (
-                          <div key={idx} className="flex items-start gap-2.5 p-2 rounded-lg">
-                            <div className={`flex-shrink-0 w-1.5 h-1.5 rounded-full mt-2 shadow-md ${
+                          <div key={idx} className={`flex items-start gap-2 rounded-lg ${cardSize === 'sm' ? 'p-1' : 'p-2'}`}>
+                            <div className={`flex-shrink-0 rounded-full shadow-md ${cardSize === 'sm' ? 'w-1 h-1 mt-1.5' : 'w-1.5 h-1.5 mt-2'} ${
                               idx === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500' :
                               idx === 1 ? `bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo}` :
                               'bg-gradient-to-br from-gray-400 to-gray-500'
                             }`}></div>
-                            <span className="text-gray-700 text-sm font-semibold">
+                            <span className={`text-gray-700 font-semibold ${cardSize === 'sm' ? 'text-xs' : 'text-sm'}`}>
                               {feature.text}
                             </span>
                           </div>
