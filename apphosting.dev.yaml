@@ -1,0 +1,71 @@
+# Firebase App Hosting Configuration for Monorepo
+runtime: nodejs20
+
+# Build configuration
+build:
+  commands:
+    - npm install 
+    - npm run build
+
+# Run configuration
+run:
+  command: npm start
+
+# Runtime configuration
+runConfig:
+  cpu: 2
+  memory: 512Mi 
+  minInstances: 0
+  maxInstances: 20
+  concurrency: 80
+
+# Environment variables (non-sensitive)
+env:
+  - variable: NODE_ENV
+    availability: [BUILD, RUNTIME]
+    value: production
+
+  - variable: PORT
+    availability: [RUNTIME]
+    value: "8080"
+
+
+  - variable: JWT_EXPIRES_IN
+    availability: [RUNTIME]
+    value: "60m"
+
+  - variable: EMAIL_SERVICE
+    availability: [RUNTIME]
+    value: gmail
+
+  - variable: OTP_VALID_TIME
+    availability: [RUNTIME]
+    value: "120"
+
+  - variable: OTP_RESEND_TIME
+    availability: [RUNTIME]
+    value: "60"
+
+  # UPDATE after first deploy — your main backend URL
+  - variable: CORS_ORIGIN
+    availability: [RUNTIME]
+    value: "https://threeiservices-crm-prd--i-services-crm.asia-southeast1.hosted.app"
+  #declare of database use for production or development
+  - variable: FIRESTORE_DB_ID
+    availability: [RUNTIME]
+    value: "development"
+
+  # Environment variables (sensitive) — stored in Google Secret Manager
+
+  - variable: FIREBASE_API_KEY
+    secret: projects/i-services-crm/secrets/FIREBASE_API_KEY
+
+  #used for Development
+  - variable: JWT_SECRET
+    secret: projects/i-services-crm/secrets/JWT_SECRET_DEV
+
+  - variable: EMAIL_USER
+    secret: projects/i-services-crm/secrets/EMAIL_USER_DEV
+
+  - variable: EMAIL_PASSWORD
+    secret: projects/i-services-crm/secrets/EMAIL_PASSWORD_DEV
