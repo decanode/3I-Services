@@ -24,24 +24,22 @@ function formatLastLogin(last) {
 
 exports.getDashboard = async (req, res) => {
   try {
-    const users = await userService.getAllUsers();
+    const [users, lastLoginMap] = await Promise.all([
+      userService.getAllUsers(),
+      activityService.getAllLastLogins(),
+    ]);
 
-    const employees = await Promise.all(
-      users.map(async (u) => {
-        const last = await activityService.getLastLogin(u.userId);
-        return {
-          empId: u.userId || '',
-          firstName: u.firstName || '',
-          lastName: u.lastName || '',
-          email: u.email || '',
-          phone: u.phone || '',
-          countryCode: u.countryCode || '+91',
-          city: u.city || '',
-          role: u.role || 'employee',
-          lastLogin: formatLastLogin(last),
-        };
-      })
-    );
+    const employees = users.map((u) => ({
+      empId: u.userId || '',
+      firstName: u.firstName || '',
+      lastName: u.lastName || '',
+      email: u.email || '',
+      phone: u.phone || '',
+      countryCode: u.countryCode || '+91',
+      city: u.city || '',
+      role: u.role || 'employee',
+      lastLogin: formatLastLogin(lastLoginMap[u.userId] || null),
+    }));
 
     employees.sort((a, b) => {
       const na = `${a.firstName} ${a.lastName}`.trim().toLowerCase();

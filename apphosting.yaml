@@ -13,11 +13,11 @@ run:
 
 # Runtime configuration
 runConfig:
-  cpu: 1          # Reduced from 2 — Express + JSON doesn't need 2 cores
-  memory: 512Mi   # Sufficient for optimised payloads
-  minInstances: 1 # Always-on: prevents cold starts for internal CRM users
-  maxInstances: 5 # Reduced from 20 — internal CRM won't exceed 5 concurrent instances
-  concurrency: 40 # Reduced from 80 — conservative, matches actual CRM load
+  cpu: 1          
+  memory: 512Mi   
+  minInstances: 1 
+  maxInstances: 5 
+  concurrency: 40 
 
 # Environment variables (non-sensitive)
 env:

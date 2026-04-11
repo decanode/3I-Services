@@ -39,6 +39,22 @@ class ActivityService {
     if (snapshot.empty) return null;
     return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
   }
+
+  // Fetch all login activities in one query and return a userId → latest-activity map.
+  // Use this on the admin dashboard instead of N individual getLastLogin() calls.
+  async getAllLastLogins() {
+    const snapshot = await this.collection.get();
+    const map = {};
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const { userId, timestamp } = data;
+      if (!userId) return;
+      if (!map[userId] || (timestamp || '') > (map[userId].timestamp || '')) {
+        map[userId] = data;
+      }
+    });
+    return map;
+  }
 }
 
 module.exports = new ActivityService();
