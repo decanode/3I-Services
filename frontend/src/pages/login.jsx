@@ -265,6 +265,22 @@ const SERVICES_CARDS = [
   },
 ];
 
+function resolveGradientColor(tailwindClass) {
+  const map = {
+    'from-amber-400': '#fbbf24', 'from-blue-400': '#60a5fa',
+    'from-teal-400': '#2dd4bf', 'from-purple-400': '#c4b5fd',
+    'from-emerald-400': '#6ee7b7', 'from-green-400': '#4ade80',
+    'from-red-400': '#f87171',   'from-indigo-400': '#818cf8',
+    'from-orange-400': '#fb923c', 'from-slate-400': '#94a3b8',
+    'to-orange-500': '#f97316',  'to-cyan-500': '#06b6d4',
+    'to-emerald-500': '#10b981', 'to-pink-500': '#ec4899',
+    'to-green-500': '#22c55e',   'to-rose-500': '#f43f5e',
+    'to-blue-500': '#3b82f6',    'to-red-500': '#ef4444',
+    'to-gray-500': '#6b7280',
+  };
+  return map[tailwindClass] || '#9ca3af';
+}
+
 export default function LoginPage() {
   const isScrolling = useRef(false);
   const navigate = useNavigate();
@@ -330,6 +346,10 @@ export default function LoginPage() {
   const OTP_VALID_TIME = 120;
   const OTP_RESEND_TIME = 60;
 
+  const handleImageLoad = useCallback((cardId) => {
+    setLoadedImages(prev => ({ ...prev, [cardId]: true }));
+  }, []);
+
   const showAlert = useCallback((type, message) => {
     const titleMap = { error: 'Error', success: 'Success' };
     setAlert({
@@ -340,10 +360,6 @@ export default function LoginPage() {
       onCancel: () => setAlert(null),
     });
   }, []);
-
-  const handleImageLoad = (cardId) => {
-    setLoadedImages(prev => ({ ...prev, [cardId]: true }));
-  };
 
   const handleInputChange = (e, target = 'form') => {
     const { name, value } = e.target;
@@ -845,9 +861,10 @@ export default function LoginPage() {
                 >
                   {/* Top Image Section */}
                   <div
-                    className="relative overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100"
+                    className="relative overflow-hidden"
                     style={{
-                      height: cardSize === 'sm' ? '148px' : cardSize === 'md' ? '200px' : '320px'
+                      height: cardSize === 'sm' ? '148px' : cardSize === 'md' ? '200px' : '320px',
+                      background: `linear-gradient(135deg, ${resolveGradientColor(card.gradientFrom)}, ${resolveGradientColor(card.gradientTo)})`,
                     }}
                   >
                     <img
@@ -855,41 +872,20 @@ export default function LoginPage() {
                       alt={card.title}
                       width={600}
                       height={384}
-                      loading="lazy"
+                      loading={index === activeIndex ? 'eager' : 'lazy'}
+                      fetchPriority={index === activeIndex ? 'high' : 'low'}
                       decoding="async"
                       onLoad={() => handleImageLoad(card.id)}
-                      className={`w-full h-full object-cover transition-all duration-700 ${
-                        loadedImages[card.id]
-                          ? 'opacity-100 scale-100'
-                          : 'opacity-0 scale-95'
+                      className={`w-full h-full object-cover transition-opacity duration-500 ${
+                        loadedImages[card.id] ? 'opacity-100' : 'opacity-0'
                       }`}
                     />
-                    {!loadedImages[card.id] && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-200 animate-pulse"></div>
-                    )}
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/30 pointer-events-none"></div>
-                    
-                    {/* Icon at Bottom Right */}
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/30 pointer-events-none" />
+                    {/* Icon badge bottom-right */}
                     <div
                       className={`absolute bottom-2 right-2 flex items-center justify-center shadow-md ${cardSize === 'sm' ? 'w-7 h-7 rounded-lg' : 'w-10 h-10 rounded-xl'}`}
-                      style={{
-                        background: `linear-gradient(135deg, ${
-                          card.gradientFrom === 'from-amber-400' ? '#fbbf24' : 
-                          card.gradientFrom === 'from-blue-400' ? '#60a5fa' : 
-                          card.gradientFrom === 'from-teal-400' ? '#2dd4bf' : 
-                          card.gradientFrom === 'from-purple-400' ? '#c4b5fd' : 
-                          card.gradientFrom === 'from-emerald-400' ? '#6ee7b7' : 
-                          '#f87171'
-                        }, ${
-                          card.gradientTo === 'to-orange-500' ? '#f97316' : 
-                          card.gradientTo === 'to-cyan-500' ? '#06b6d4' : 
-                          card.gradientTo === 'to-emerald-500' ? '#10b981' : 
-                          card.gradientTo === 'to-pink-500' ? '#ec4899' : 
-                          card.gradientTo === 'to-green-500' ? '#22c55e' : 
-                          '#e11d48'
-                        })`
-                      }}
+                      style={{ background: `linear-gradient(135deg, ${resolveGradientColor(card.gradientFrom)}, ${resolveGradientColor(card.gradientTo)})`, filter: 'brightness(0.85)' }}
                     >
                       {React.createElement(card.icon, { size: cardSize === 'sm' ? 14 : 20, strokeWidth: 2, className: 'text-white drop-shadow-lg' })}
                     </div>

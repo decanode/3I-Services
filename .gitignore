@@ -6,4 +6,3 @@ dist
 .claude
 *.log
 package-lock.json
-frontend/public/cards/
