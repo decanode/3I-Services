@@ -2,6 +2,23 @@ const ledgerLogsService = require('../services/ledgerLogs');
 const ExcelJS = require('exceljs');
 
 /**
+ * GET /api/ledger-logs/paged?after={sequence_id}
+ * Cursor-based pagination — always reads exactly 15 Firestore documents.
+ * City access control applied automatically for non-admin users.
+ */
+exports.listPaged = async (req, res) => {
+  try {
+    const cityFilter = req.user.role === 'admin' ? null : (req.user.city || null);
+    const after = req.query.after != null ? parseInt(req.query.after, 10) : undefined;
+    const result = await ledgerLogsService.listPaged({ after, city: cityFilter });
+    res.json({ count: result.rows.length, rows: result.rows, nextCursor: result.nextCursor });
+  } catch (error) {
+    console.error('Error listing logs (paged):', error);
+    res.status(500).json({ message: 'Failed to fetch logs', error: error.message });
+  }
+};
+
+/**
  * Export logs as Excel file for a given date range
  */
 exports.exportLogs = async (req, res) => {

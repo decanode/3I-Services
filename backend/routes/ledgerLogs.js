@@ -17,6 +17,13 @@ router.get('/', authenticate, ledgerLogsController.list);
 router.get('/export', authenticate, ledgerLogsController.exportLogs);
 
 /**
+ * GET /api/ledger-logs/paged?after={sequence_id}
+ * Cursor-based pagination — exactly 15 reads per page.
+ * MUST be before /:ledger_id to avoid param collision.
+ */
+router.get('/paged', authenticate, ledgerLogsController.listPaged);
+
+/**
  * GET /api/ledger-logs/:ledger_id
  * Get logs for a specific ledger
  */

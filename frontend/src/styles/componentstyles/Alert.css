@@ -117,36 +117,88 @@
   font-size: 0.875rem;
 }
 
-/* Upload Success Stats (Custom Message Elements) */
-.upload-success-stats {
+/* ========== SUCCESS CARD ========== */
+.alert-content--success {
+  padding: 2rem 1.75rem 1.75rem;
+}
+
+.alert-card--success {
+  max-width: 22rem;
+}
+
+.alert-success-stats {
+  width: 100%;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-  margin-top: 0.5rem;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.875rem;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
 }
 
-.stat-item {
-  display: inline-flex;
+.alert-success-stat-item {
+  display: flex;
   align-items: center;
-  gap: 0.375rem;
-  font-size: 0.875rem;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.alert-success-stat-item:last-of-type {
+  border-bottom: none;
+}
+
+.alert-success-stat-item--warn {
+  background: #fffbeb;
+}
+
+.alert-success-stat-label {
+  font-size: 0.8rem;
   font-weight: 500;
-  padding: 0.375rem 0.75rem;
+  color: #6b7280;
+  letter-spacing: 0.02em;
+}
+
+.alert-success-stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #374151;
+  background: #e5e7eb;
+  padding: 0.1rem 0.55rem;
   border-radius: 9999px;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.alert-success-stat-value--good {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.alert-success-stat-value--warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.alert-success-file-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border-top: 1px solid #e5e7eb;
+}
+
+.alert-success-file-tag span {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.success-stat {
-  background-color: var(--color-accent-light-green);
-  color: var(--color-neutral-white);
-  border: 1px solid var(--color-accent-light-green);
-}
-
-.warning-stat {
-  background-color: var(--color-secondary-yellow);
-  color: var(--color-neutral-dark);
-  border: 1px solid var(--color-secondary-yellow-dark);
+  max-width: 14rem;
 }
 
 /* ========== ICONS ========== */
@@ -493,6 +545,17 @@
 
 .alert-progress-fill--done {
   background: #22c55e;
+}
+
+@keyframes processingShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.alert-progress-fill--processing {
+  background: linear-gradient(90deg, #6366f1 0%, #818cf8 40%, #a5b4fc 60%, #6366f1 100%);
+  background-size: 200% auto;
+  animation: processingShimmer 1.4s linear infinite;
 }
 
 /* ========== EXTENDED WARNING CARD ========== */

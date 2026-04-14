@@ -41,10 +41,12 @@ const PageLoader = ({ pageName = 'Loading', isDataLoading = false, onComplete, d
         // Animate to 90% over the duration
         setProgress(Math.floor(ratio * 90));
       } else {
-        // Timer done — hold at 90 until data is also done
+        // Timer done — slowly creep toward 99% while waiting for data
         timerDoneRef.current = true;
-        setProgress(90);
         tryExit();
+        if (!exitingRef.current) {
+          setProgress(prev => Math.min(prev + 1, 99));
+        }
       }
     }, 30);
 

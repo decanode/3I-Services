@@ -164,38 +164,47 @@
 
 .outstandings-heading {
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #334155;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 0.4rem;
-  display: inline-block;
+  margin-bottom: 0.8rem;
+  border-bottom: 3px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+  display: block;
+  flex-shrink: 0;
 }
 
 .outstandings-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 0.8rem;
+  height: fit-content;
 }
 
 .amount-card {
-  padding: 0.8rem;
-  border-radius: 10px;
+  padding: 1.4rem;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  gap: 0.8rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.amount-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
 .debit-card {
   background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-  border: 1px solid #fca5a5;
+  border: 2px solid #fca5a5;
   color: #991b1b;
 }
 
 .credit-card {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce3 100%);
-  border: 1px solid #86efac;
+  border: 2px solid #86efac;
   color: #166534;
 }
 
@@ -206,28 +215,81 @@
 }
 
 .amount-title {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
   opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .amount-icon {
   opacity: 0.8;
+  flex-shrink: 0;
 }
 
 .amount-value {
-  font-size: 0.9rem;
+  font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: -0.025em;
+  line-height: 1.1;
 }
 
-.interaction-section {
-  padding: 0.8rem 0;
+.main-content-wrapper {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: 1.2rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  align-items: start;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+}
+
+.middle-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.right-column {
+  display: flex;
+  height: fit-content;
+  flex-direction: column;
+}
+
+.outstandings-section {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+}
+
+.customer-section {
+  padding: 0;
+}
+
+
+.customer-details-row.single-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 0;
+}
+
+.customer-details-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.2rem;
 }
 
 .interaction-heading {
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #334155;
   margin: 0;
   display: block;
@@ -237,9 +299,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.2rem;
+  margin-bottom: 0.8rem;
   border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 0.4rem;
+  padding-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  flex-shrink: 0;
 }
 
 .interaction-edit-actions {
@@ -248,21 +313,167 @@
   align-items: center;
 }
 
-.interaction-cards.clickable .detail-card {
-  cursor: pointer;
-  transition: all 0.2s ease;
+.interaction-edit-actions-bar {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 0.6rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
-.interaction-cards.clickable .detail-card:hover {
-  transition: all 0.2s ease;
+.interaction-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+}
+
+.interaction-section {
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+}
+
+/* Combined interaction card — date strip + comments body */
+.interaction-combined-card {
+  background: linear-gradient(160deg, #f0f7ff 0%, #f3e8ff 100%);
+  border: 2px solid #c4b5fd;
+  border-radius: 12px;
+  overflow: visible;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.08);
+  display: flex;
+  flex-direction: column;
+  min-height: auto;
+  position: relative;
+  height: fit-content;
+}
+
+.interaction-date-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-bottom: 1.5px solid #c4b5fd;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.interaction-date-section:hover {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.interaction-date-section--editing {
+  cursor: default;
+}
+
+.interaction-date-section--editing:hover {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.interaction-datepicker-wrapper {
+  flex-shrink: 0;
+  width: 200px;
+  position: relative;
+  z-index: 150;
+}
+
+.interaction-datepicker-wrapper .heroui-datepicker {
+  width: 100%;
+}
+
+.interaction-datepicker-wrapper .date-field-group {
+  height: 34px;
+  font-size: 0.8rem;
+  padding-left: 2rem;
+}
+
+.interaction-datepicker-wrapper .date-picker-popover {
+  z-index: 999;
+  left: auto;
+  right: 0;
+}
+
+.interaction-date-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #1e3a8a;
+  flex-shrink: 0;
+}
+
+.interaction-date-label .detail-title {
+  color: #1e3a8a;
+}
+
+.interaction-date-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e40af;
+  letter-spacing: -0.01em;
+}
+
+.interaction-comments-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  color: #4c1d95;
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: background 0.15s ease;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: 0 0 10px 10px;
+}
+
+.interaction-comments-section:hover {
+  background: rgba(196, 181, 253, 0.08);
+}
+
+.interaction-comments-section--editing {
+  cursor: default;
+  overflow-y: auto;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.interaction-comments-section--editing:hover {
+  background: transparent;
+}
+
+.interaction-comments-section--editing .comment-entry {
+  text-align: center;
+}
+
+.interaction-comments-section--editing .comment-entry .comment-text,
+.interaction-comments-section--editing .comment-date {
+  text-align: center;
+}
+
+.interaction-comments-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #4c1d95;
+  align-self: stretch;
+}
+
+.interaction-comments-label .detail-title {
+  color: #4c1d95;
 }
 
 .customer-details-heading {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: #334155;
-  margin-bottom: 0.8rem;
-  margin-top: 1.6rem;
+  margin: 0 0 0.8rem 0;
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0.4rem;
   display: block;
@@ -293,20 +504,14 @@
   color: #9a3412;
 }
 
-.interaction-cards {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 1rem;
-  width: 100%;
-}
-
 .detail-card {
-  padding: 1rem;
+  padding: 1.2rem;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  gap: 0.8rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  min-height: auto;
 }
 
 .detail-card .customer-input {
@@ -315,13 +520,13 @@
 
 .date-card {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid #93c5fd;
+  border: 2px solid #93c5fd;
   color: #1e3a8a;
 }
 
 .comment-card {
   background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-  border: 1px solid #d8b4fe;
+  border: 2px solid #d8b4fe;
   color: #4c1d95;
 }
 
@@ -332,9 +537,11 @@
 }
 
 .detail-title {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
   opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .detail-icon {
@@ -342,9 +549,9 @@
 }
 
 .detail-value {
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .comment-text {
@@ -394,6 +601,7 @@
   transition: all 0.2s ease;
   min-height: 48px;
   max-height: 96px;
+  text-align: left;
 }
 
 .comment-textarea:focus {
@@ -440,6 +648,90 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.2rem;
+}
+
+.comments-list {
+  width: 100%;
+}
+
+.comments-display {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-self: stretch;
+}
+
+.comments-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.comment-entry {
+  padding: 0.5rem 0.7rem;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.comment-entry .comment-text {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  font-weight: 500;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #3b0764;
+  text-align: center;
+}
+
+.comment-date {
+  font-size: 0.72rem;
+  color: rgba(76, 29, 149, 0.52);
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.show-all-comments-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #4c1d95;
+  background: rgba(216, 180, 254, 0.2);
+  border: 1px solid #c9b3e6;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.show-all-comments-btn:hover {
+  background: rgba(216, 180, 254, 0.35);
+  border-color: #d8b4fe;
+}
+
+.show-all-comments-btn:active {
+  transform: scale(0.98);
+}
+
+.comment-edit-inline .previous-comments {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(216, 180, 254, 0.3);
+}
+
+.previous-comments-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #4c1d95;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+  text-align: center;
 }
 
 .additional-customers-heading {
@@ -556,6 +848,15 @@
   box-shadow: 0 6px 12px rgba(2, 132, 199, 0.2);
 }
 
+.primary-customer-section {
+  padding: 0;
+}
+
+.primary-customer-section .customer-details-row {
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 0.8rem;
+}
+
 .customer-row-wrapper {
   display: flex;
   gap: 0.6rem;
@@ -632,6 +933,13 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1400px) {
+  .main-content-wrapper {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.2rem;
+  }
+}
+
 @media (max-width: 1024px) {
   .interaction-cards {
     grid-template-columns: 1fr;
@@ -643,6 +951,10 @@
 
   .comment-edit-inline {
     grid-column: 1;
+  }
+
+  .outstandings-cards {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -660,6 +972,20 @@
     max-height: 100%;
     padding: 1rem;
     border-radius: 12px;
+  }
+
+  .main-content-wrapper {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .primary-customer-section .customer-details-row {
+    grid-template-columns: 1fr;
+  }
+
+  .right-column {
+    grid-column: auto;
   }
 
   /* Hide in-card back button — navbar already provides it */
@@ -698,25 +1024,45 @@
     gap: 0.5rem;
   }
 
+  .outstandings-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .customer-details-row,
   .additional-customers-row {
     grid-template-columns: 1fr;
+  }
+
+  .customer-details-row.single-row {
+    flex-direction: column;
   }
 
   .interaction-cards {
     grid-template-columns: 1fr;
   }
 
-  .outstandings-cards {
-    grid-template-columns: 1fr;
+  .outstandings-heading,
+  .customer-details-heading,
+  .interaction-heading {
+    font-size: 0.95rem;
+  }
+
+  .amount-value {
+    font-size: 1.2rem;
+  }
+
+  .detail-value {
+    font-size: 0.85rem;
+  }
+
+  .amount-title,
+  .detail-title {
+    font-size: 0.75rem;
   }
 
   .detail-card {
-    padding: 0.85rem;
-  }
-
-  .amount-card {
-    padding: 0.85rem;
+    padding: 0.9rem;
+    gap: 0.6rem;
   }
 
   .form-action-buttons-center {

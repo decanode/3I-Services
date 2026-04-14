@@ -22,6 +22,7 @@ export default function NotifyDetailPage() {
   const [editableComments, setEditableComments] = useState('');
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [isEditingComment, setIsEditingComment] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [ledgerDataLoading, setLedgerDataLoading] = useState(true);
   const [showLoader, setShowLoader] = useState(true);
@@ -62,7 +63,7 @@ export default function NotifyDetailPage() {
       } catch (error) {
         console.error('Error fetching ledger data:', error);
         setEditableDate(row?.date || '');
-        setEditableComments(row?.lastComments || row?.comments || '');
+        setEditableComments('');
       } finally {
         setLedgerDataLoading(false);
       }
@@ -366,6 +367,7 @@ export default function NotifyDetailPage() {
       setHasCustomerChanges(false);
       setIsEditingDate(false);
       setIsEditingComment(false);
+      setShowAllComments(false);
     } catch (error) {
       console.error('handleSave - error:', error);
       setAlert({ type: 'error', title: 'Save Failed', message: error.message || 'Failed to save' });
@@ -439,184 +441,252 @@ export default function NotifyDetailPage() {
             />
           )}
 
-          {ledgerData && (
-            <div className="outstandings-section">
-              <h3 className="outstandings-heading">Outstandings Details :</h3>
-              <div className="outstandings-cards">
-                <div className="amount-card debit-card">
-                  <div className="amount-header">
-                    <span className="amount-title">Debit</span>
-                    <TrendingDown className="amount-icon" size={20} />
+          {ledgerData && (<>
+            <div className="main-content-wrapper">
+              {/* Left Column: Outstanding Details */}
+              <div className="left-column">
+                <div className="outstandings-section">
+                  <h3 className="outstandings-heading">Outstanding Details</h3>
+                  <div className="outstandings-cards">
+                    <div className="amount-card debit-card">
+                      <div className="amount-header">
+                        <span className="amount-title">Debit</span>
+                        <TrendingDown className="amount-icon" size={24} />
+                      </div>
+                      <div className="amount-value">
+                        {formatCurrency(ledgerData.debit)}
+                      </div>
+                    </div>
+
+                    <div className="amount-card credit-card">
+                      <div className="amount-header">
+                        <span className="amount-title">Credit</span>
+                        <TrendingUp className="amount-icon" size={24} />
+                      </div>
+                      <div className="amount-value">
+                        {formatCurrency(ledgerData.credit)}
+                      </div>
+                    </div>
                   </div>
-                  <div className="amount-value">
-                    {formatCurrency(ledgerData.debit)}
+                </div>
+              </div>
+
+              {/* Right: Interaction Details (3/5) */}
+              <div className="right-column">
+                <div className="interaction-section">
+                  <div className="interaction-heading-wrapper">
+                    <h3 className="interaction-heading">Interaction Details</h3>
+                  </div>
+
+                  <div className="interaction-combined-card">
+                    {/* ── Date strip at top ── */}
+                    {!isEditingDate ? (
+                      <div
+                        className="interaction-date-section"
+                        onClick={() => setIsEditingDate(true)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setIsEditingDate(true)}
+                      >
+                        <div className="interaction-date-label">
+                          <Calendar size={14} />
+                          <span className="detail-title">Next Call Date</span>
+                        </div>
+                        <div className="interaction-date-value">
+                          {editableDate ? formatDate(editableDate) : '—'}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="interaction-date-section interaction-date-section--editing">
+                        <div className="interaction-date-label">
+                          <Calendar size={14} />
+                          <span className="detail-title">Next Call Date</span>
+                        </div>
+                        <div className="interaction-datepicker-wrapper">
+                          <DatePicker
+                            value={editableDate}
+                            onChange={setEditableDate}
+                            flow="currentMonth"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── Comments body ── */}
+                    {!isEditingComment ? (
+                      <div
+                        className="interaction-comments-section"
+                        onClick={() => {
+                          setIsEditingComment(true);
+                          setEditableComments('');
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setIsEditingComment(true)}
+                      >
+                        <div className="interaction-comments-label">
+                          <MessageSquare size={14} />
+                          <span className="detail-title">Last Comments</span>
+                        </div>
+                        {Array.isArray(ledgerData?.lastComments) && ledgerData.lastComments.length > 0 ? (
+                          <div className="comments-display">
+                            {showAllComments ? (
+                              <div className="comments-scroll">
+                                {ledgerData.lastComments.map((comment, idx) => (
+                                  <div key={idx} className="comment-entry">
+                                    <div className="comment-text">{comment.text}</div>
+                                    <div className="comment-date">
+                                      {new Date(comment.date).toLocaleDateString('en-IN', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="comment-entry">
+                                <div className="comment-text">
+                                  {ledgerData.lastComments[ledgerData.lastComments.length - 1]?.text}
+                                </div>
+                                <div className="comment-date">
+                                  {new Date(
+                                    ledgerData.lastComments[ledgerData.lastComments.length - 1]?.date
+                                  ).toLocaleDateString('en-IN', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            {ledgerData.lastComments.length > 1 && (
+                              <button
+                                className="show-all-comments-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowAllComments(!showAllComments);
+                                }}
+                              >
+                                {showAllComments ? 'Hide All' : `Show All (${ledgerData.lastComments.length})`}
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="comment-text">—</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="interaction-comments-section interaction-comments-section--editing">
+                        <div className="interaction-comments-label">
+                          <MessageSquare size={14} />
+                          <span className="detail-title">Add New Comment</span>
+                        </div>
+                        <textarea
+                          value={editableComments}
+                          onChange={(e) => setEditableComments(e.target.value)}
+                          placeholder="Enter new comment here..."
+                          className="comment-textarea"
+                          autoFocus
+                        />
+                        {Array.isArray(ledgerData?.lastComments) && ledgerData.lastComments.length > 0 && (
+                          <div className="previous-comments">
+                            <div className="previous-comments-label">Previous Comments:</div>
+                            <div className="comments-scroll">
+                              {ledgerData.lastComments.map((comment, idx) => (
+                                <div key={idx} className="comment-entry">
+                                  <div className="comment-text">{comment.text}</div>
+                                  <div className="comment-date">
+                                    {new Date(comment.date).toLocaleDateString('en-IN', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {(isEditingComment || isEditingDate) && (
+                    <div className="interaction-edit-actions-bar">
+                      <SaveButton
+                        onClick={handleSave}
+                        disabled={isLoading}
+                        size="medium"
+                        title="Save changes"
+                        showLabel={true}
+                      />
+                      <CancelButton
+                        onClick={() => {
+                          setIsEditingDate(false);
+                          setIsEditingComment(false);
+                          setShowAllComments(false);
+                          setEditableDate(ledgerData?.nextCallDate || '');
+                          setEditableComments(ledgerData?.lastComments || '');
+                        }}
+                        disabled={isLoading}
+                        size="medium"
+                        title="Cancel editing"
+                        showLabel={true}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="primary-customer-section">
+              <h4 className="customer-details-heading">Customer Details</h4>
+              <div className="customer-details-row">
+                <div className="detail-card customer-detail-name-card">
+                  <div className="detail-header">
+                    <span className="detail-title">Customer Name</span>
+                    <User className="detail-icon" size={20} />
+                  </div>
+                  <div className="detail-value">
+                    {ledgerData.contact || '—'}
                   </div>
                 </div>
 
-                <div className="amount-card credit-card">
-                  <div className="amount-header">
-                    <span className="amount-title">Credit</span>
-                    <TrendingUp className="amount-icon" size={20} />
+                <div className="detail-card customer-detail-phone-card">
+                  <div className="detail-header">
+                    <span className="detail-title">Mobile</span>
+                    <Phone className="detail-icon" size={20} />
                   </div>
-                  <div className="amount-value">
-                    {formatCurrency(ledgerData.credit)}
+                  <div className="detail-value">
+                    {ledgerData.mobile || '—'}
+                  </div>
+                </div>
+
+                <div className="detail-card customer-detail-email-card">
+                  <div className="detail-header">
+                    <span className="detail-title">Email</span>
+                    <Mail className="detail-icon" size={20} />
+                  </div>
+                  <div className="detail-value">
+                    {ledgerData.email || '—'}
                   </div>
                 </div>
               </div>
             </div>
-          )}
+          </>)}
 
-          {ledgerData && (
-            <div className="interaction-section">
-              <div className="interaction-heading-wrapper">
-                <h3 className="interaction-heading">Interaction Details :</h3>
-                {(isEditingComment || isEditingDate || hasCustomerChanges) && (
-                  <div className="interaction-edit-actions">
-                    <SaveButton
-                      onClick={handleSave}
-                      disabled={isLoading}
-                      size="medium"
-                      title="Save changes"
-                      showLabel={true}
-                    />
-                    <CancelButton
-                      onClick={() => {
-                        setIsEditingDate(false);
-                        setIsEditingComment(false);
-                        setHasCustomerChanges(false);
-                        setEditableDate(ledgerData?.nextCallDate || '');
-                        setEditableComments(ledgerData?.lastComments || '');
-                        // Reload customers from ledger data
-                        const additionals = [];
-                        for (let i = 1; i <= 3; i++) {
-                          const cname = ledgerData?.[`cname${i}`];
-                          const mob = ledgerData?.[`cmob${i}`];
-                          const cemail = ledgerData?.[`cemail${i}`];
-                          if (cname || mob || cemail) {
-                            additionals.push({ name: cname || '', mobile: mob || '', email: cemail || '' });
-                          }
-                        }
-                        setAdditionalCustomers(additionals);
-                      }}
-                      disabled={isLoading}
-                      size="medium"
-                      title="Cancel editing"
-                      showLabel={true}
-                    />
-                  </div>
-                )}
-              </div>
-              
-              <div className={`interaction-cards read-only ${!isEditingComment && !isEditingDate ? 'clickable' : ''}`}>
-                {!isEditingDate ? (
-                  <div
-                    className="detail-card date-card"
-                    onClick={() => setIsEditingDate(true)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && setIsEditingDate(true)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="detail-header">
-                      <span className="detail-title">Next Call Date</span>
-                      <Calendar className="detail-icon" size={20} />
-                    </div>
-                    <div className="detail-value">
-                      {editableDate ? formatDate(editableDate) : '—'}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="detail-card date-card date-edit-inline">
-                    <div className="detail-header">
-                      <span className="detail-title">Next Call Date</span>
-                      <Calendar className="detail-icon" size={20} />
-                    </div>
-                    <div className="editable-field">
-                      <DatePicker 
-                        value={editableDate}
-                        onChange={setEditableDate}
-                        flow="currentMonth"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {!isEditingComment ? (
-                  <div
-                    className="detail-card comment-card"
-                    onClick={() => {
-                      setIsEditingComment(true);
-                      setEditableComments('');
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && setIsEditingComment(true)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="detail-header">
-                      <span className="detail-title">Comments</span>
-                      <MessageSquare className="detail-icon" size={20} />
-                    </div>
-                    <div className="comment-text">
-                      {editableComments || '—'}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="detail-card comment-card comment-edit-inline">
-                    <div className="comment-edit-header">
-                      <span className="detail-title">Comments</span>
-                      <MessageSquare className="detail-icon" size={20} />
-                    </div>
-                    <textarea
-                      value={editableComments}
-                      onChange={(e) => setEditableComments(e.target.value)}
-                      placeholder="Enter comments here..."
-                      className="comment-textarea"
-                      autoFocus
-                    />
-                  </div>
-                )}
-              </div>
-
-              {ledgerData && (
+          <div>
+              {ledgerData && additionalCustomers.length > 0 && (
                 <>
-                  <h4 className="customer-details-heading">Customer Details :</h4>
-                  <div className="customer-details-row">
-                    <div className="detail-card customer-detail-name-card">
-                      <div className="detail-header">
-                        <span className="detail-title">Customer Name</span>
-                        <User className="detail-icon" size={20} />
-                      </div>
-                      <div className="detail-value">
-                        {ledgerData.contact || '—'}
-                      </div>
-                    </div>
-
-                    <div className="detail-card customer-detail-phone-card">
-                      <div className="detail-header">
-                        <span className="detail-title">Mobile</span>
-                        <Phone className="detail-icon" size={20} />
-                      </div>
-                      <div className="detail-value">
-                        {ledgerData.mobile || '—'}
-                      </div>
-                    </div>
-
-                    <div className="detail-card customer-detail-email-card">
-                      <div className="detail-header">
-                        <span className="detail-title">Email</span>
-                        <Mail className="detail-icon" size={20} />
-                      </div>
-                      <div className="detail-value">
-                        {ledgerData.email || '—'}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {additionalCustomers.length > 0 && (
-                <>
+                  <h4 className="customer-details-heading">Additional Contacts</h4>
                   {additionalCustomers.map((customer, index) => (
                     <div key={index}>
                       {editingCustomerIndex === index ? (
@@ -808,7 +878,6 @@ export default function NotifyDetailPage() {
                 </>
               )}
             </div>
-          )}
         </div>
     </div>
   );

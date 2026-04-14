@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { apiFetch } from '../utils/api';
+import { useMasterData } from '../hooks/useMasterData';
+// import { useUpdateLedger } from '../hooks/useUpdateLedger'; // wire up when inline editing is added
 import Table from '../components/Table';
 import { Pagination, SearchBar, Button, ExpandColumnsButton } from '../components/Button';
 import PageLoader from '../components/loading';
@@ -17,51 +18,46 @@ function formatCell(value) {
 
 export default function ViewDataPage() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showLoader, setShowLoader] = useState(true);
-  const [alert, setAlert] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isColumnsExpanded, setIsColumnsExpanded] = useState(false);
-  const rowsPerPage = 15;
+
+  // Cursor stack — last element is the current page's cursor (null = page 1)
+  const [cursorStack, setCursorStack] = useState([null]);
+  const [pageIndex, setPageIndex] = useState(1);
+
+  const currentCursor = cursorStack[cursorStack.length - 1];
+
+  // React Query: serves from 5-min cache on revisit, no Firestore reads
+  const { data, isLoading, isError, error, refetch } = useMasterData(currentCursor);
+
+  // To add inline editing: import useUpdateLedger and call:
+  // const { mutate: updateLedger } = useUpdateLedger(currentCursor);
+  // updateLedger({ ledger_id, payload: { nextCallDate, lastComments } })
+
+  const rows       = data?.rows    ?? [];
+  const columns    = data?.columns ?? [];
+  const nextCursor = data?.nextCursor ?? null;
 
   // Define default visible columns
-  const defaultVisibleColumns = useMemo(() => 
+  const defaultVisibleColumns = useMemo(() =>
     ['ledger', 'city', 'address1', 'address2', 'address3', 'pin', 'email', 'contact', 'phone1', 'phone2', 'mobile', 'tin'],
     []
   );
 
-  const load = useCallback(async () => {
-    setAlert(null);
-    setLoading(true);
-    try {
-      const res = await apiFetch('/api/excel/master?limit=1000');
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.message || data.error || 'Failed to load');
-      }
-      setRows(Array.isArray(data.rows) ? data.rows : []);
-      setColumns(Array.isArray(data.columns) ? data.columns : []);
-    } catch (e) {
-      setAlert({
-        type: 'error',
-        title: 'Load Failed',
-        message: e.message || 'Failed to load master data',
-        onConfirm: () => { setAlert(null); load(); },
-        onCancel: () => setAlert(null),
-      });
-      setRows([]);
-      setColumns([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const goNext = () => {
+    if (nextCursor == null) return;
+    setCursorStack(prev => [...prev, nextCursor]);
+    setPageIndex(p => p + 1);
+    setSearchQuery('');
+  };
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const goPrev = () => {
+    if (cursorStack.length <= 1) return;
+    setCursorStack(prev => prev.slice(0, -1));
+    setPageIndex(p => p - 1);
+    setSearchQuery('');
+  };
 
   // Map each exact column key to its desired width and alignment
   const columnConfig = useMemo(() => ({
@@ -106,9 +102,7 @@ export default function ViewDataPage() {
 
   const tableColumns = useMemo(
     () => {
-      // Filter columns based on expansion state
       const visibleCols = isColumnsExpanded ? columns : columns.filter(col => defaultVisibleColumns.includes(col));
-      
       return visibleCols.map((key) => {
         const config = columnConfig[key] || {};
         return {
@@ -125,7 +119,6 @@ export default function ViewDataPage() {
 
   const tableMinWidth = useMemo(
     () => {
-      // Calculate total width of all dynamically mapped columns
       const totalWidth = tableColumns.reduce((sum, col) => {
         const width = col.width ? parseInt(col.width.replace(/[^0-9]/g, ''), 10) : 200;
         return sum + (isNaN(width) ? 200 : width);
@@ -135,7 +128,7 @@ export default function ViewDataPage() {
     [tableColumns]
   );
 
-  // Filter rows by search query across all visible columns
+  // In-page search — filters within the 15 loaded rows only
   const filteredRows = useMemo(() => {
     if (!searchQuery.trim()) return rows;
     const q = searchQuery.trim().toLowerCase();
@@ -147,39 +140,26 @@ export default function ViewDataPage() {
     );
   }, [rows, columns, searchQuery]);
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-  const currentRows = useMemo(() => {
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    return filteredRows.slice(startIndex, startIndex + rowsPerPage);
-  }, [filteredRows, currentPage, rowsPerPage]);
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-    }
-  };
-
-  const showTable = !loading && !alert && columns.length > 0;
+  const showTable = !isLoading && !isError && columns.length > 0;
 
   return (
     <div className="view-master-page">
       {showLoader && (
         <PageLoader
           pageName="Master"
-          isDataLoading={loading}
+          isDataLoading={isLoading}
           duration={1500}
           onComplete={() => setShowLoader(false)}
         />
       )}
 
-      {alert && (
+      {isError && (
         <Alert
-          type={alert.type}
-          title={alert.title}
-          message={alert.message}
-          onConfirm={alert.onConfirm}
-          onCancel={alert.onCancel}
+          type="error"
+          title="Load Failed"
+          message={error?.message || 'Failed to load master data'}
+          onConfirm={() => refetch()}
+          onCancel={() => {}}
         />
       )}
 
@@ -189,14 +169,14 @@ export default function ViewDataPage() {
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flex: 1 }}>
               <SearchBar
                 value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                placeholder="Search master data..."
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search this page..."
               />
               {searchQuery && (
                 <Button
                   variant="secondary"
                   size="small"
-                  onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
+                  onClick={() => setSearchQuery('')}
                 >
                   Show All
                 </Button>
@@ -217,7 +197,7 @@ export default function ViewDataPage() {
               containerClassName="view-master-reusable-table-container"
               tableClassName="view-master-reusable-table"
               columns={tableColumns}
-              data={currentRows}
+              data={filteredRows}
               minWidth={tableMinWidth}
               striped
               headerGradient
@@ -225,13 +205,13 @@ export default function ViewDataPage() {
               noDataMessage="No records in Excel_master yet. Upload a file from Excel."
             />
           </div>
-          <div style={{ padding: '0.5rem 0', background: 'white', borderTop: '1px solid #e2e8f0' }}>
-             <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-          </div>
+          <Pagination
+            currentPage={pageIndex}
+            hasPrev={cursorStack.length > 0}
+            hasNext={nextCursor != null}
+            onPrev={goPrev}
+            onNext={goNext}
+          />
         </div>
       )}
     </div>

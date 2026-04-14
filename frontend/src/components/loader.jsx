@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import '../styles/componentstyles/loader.css';
 
 export const loaderConfig = {
-  text: "7FS - 3i Services",
+  text: "3i Services",
   durationMs: 3000, // 3 seconds default
   waves: {
     frontSpeed: 0.18, 

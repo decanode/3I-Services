@@ -45,6 +45,7 @@ async function fetchUpcoming(days = 7, limit = '') {
 // ─── Card (Dashboard Widget) ────────────────────────────────────────────────
 
 export function RemainderCard() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -95,7 +96,7 @@ export function RemainderCard() {
           {!loading && !error && items.length > 0 && visible.map((item, idx) => {
             const offset = getDayOffset(item.nextCallDate);
             return (
-              <div key={`${item.id ?? item.ledger_id}-${idx}`} className={`rc__item${offset === 0 ? ' rc__item--today' : ''}`}>
+              <div key={`${item.id ?? item.ledger_id}-${idx}`} className={`rc__item${offset === 0 ? ' rc__item--today' : ''}`} onClick={() => navigate('/view-notify-detail', { state: { row: item } })} style={{ cursor: 'pointer' }}>
                 <div className={`rc__date-badge${offset === 0 ? ' rc__date-badge--today' : ''}`}>
                   <span>{formatDate(item.nextCallDate)}</span>
                   {getDayLabel(offset) && <span className="rc__day-label">{getDayLabel(offset)}</span>}
@@ -236,7 +237,7 @@ export default function RemainderPage() {
 
                 <div className="rp__items">
                   {items.map((item, idx) => (
-                    <div key={`${item.id ?? item.ledger_id}-${idx}`} className="rp__item">
+                    <div key={`${item.id ?? item.ledger_id}-${idx}`} className="rp__item" onClick={() => navigate('/view-notify-detail', { state: { row: item } })} style={{ cursor: 'pointer' }}>
                       <div className="rp__item-body">
                         {/* Left */}
                         <div className="rp__item-left">

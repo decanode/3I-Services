@@ -1,5 +1,6 @@
 const { db } = require('../config/firebase');
 const { LEDGER_LOGS_COLLECTION_NAME, createLedgerLogEntry } = require('../models/ledgerLogs');
+const counterService = require('./counterService');
 
 const BATCH_MAX = 400;
 
@@ -9,13 +10,14 @@ class LedgerLogsService {
   }
 
   /**
-   * Add a log entry for ledger updates
+   * Add a single log entry with a sequential LL- document ID.
    */
   async addLog(logData) {
     try {
       const logEntry = createLedgerLogEntry(logData);
-      const ref = this.collection.doc();
-      await ref.set(logEntry);
+      const { firstId } = await counterService.reserveLogIds(1);
+      const ref = this.collection.doc(`LL${firstId}`);
+      await ref.set({ ...logEntry, sequence_id: firstId });
       return { success: true, id: ref.id };
     } catch (error) {
       console.error('Error adding ledger log:', error);
@@ -24,23 +26,26 @@ class LedgerLogsService {
   }
 
   /**
-   * Add multiple log entries in batch
+   * Add multiple log entries in batch.
+   * All IDs are reserved in a single atomic transaction before any writes,
+   * so the counter is only touched once regardless of how many logs are written.
    */
   async addLogs(logs) {
     if (!logs.length) return { inserted: 0 };
 
+    const { firstId } = await counterService.reserveLogIds(logs.length);
     let inserted = 0;
+
     for (let i = 0; i < logs.length; i += BATCH_MAX) {
       const batch = db.batch();
       const chunk = logs.slice(i, i + BATCH_MAX);
-
-      for (const logData of chunk) {
-        const logEntry = createLedgerLogEntry(logData);
-        const ref = this.collection.doc();
-        batch.set(ref, logEntry);
+      for (let j = 0; j < chunk.length; j++) {
+        const n = firstId + (i + j);
+        const logEntry = createLedgerLogEntry(chunk[j]);
+        const ref = this.collection.doc(`LL${n}`);
+        batch.set(ref, { ...logEntry, sequence_id: n });
         inserted += 1;
       }
-
       await batch.commit();
     }
 
@@ -48,7 +53,8 @@ class LedgerLogsService {
   }
 
   /**
-   * Get logs for a specific ledger
+   * Get logs for a specific ledger (ordered by timestamp, not sequence_id,
+   * because this is a ledger-scoped view — not a global paginated list).
    */
   async getLogsByLedgerId(ledger_id, opts = {}) {
     try {
@@ -77,7 +83,7 @@ class LedgerLogsService {
   }
 
   /**
-   * Get all logs with pagination
+   * Get all logs with a simple limit (legacy endpoint — preserved for compatibility).
    */
   async list(opts = {}) {
     try {
@@ -110,7 +116,33 @@ class LedgerLogsService {
   }
 
   /**
-   * Get logs within a date range for export
+   * Cursor-based paginated list — always reads exactly 15 documents.
+   * Respects city-based access control when opts.city is provided.
+   * Pass opts.after = sequence_id of the last visible row to advance the cursor.
+   *
+   * @param {{ after?: number, city?: string }} opts
+   * @returns {{ rows: object[], nextCursor: number|null }}
+   */
+  async listPaged(opts = {}) {
+    const city = opts.city ? String(opts.city).trim().toLowerCase() : null;
+    let query = city
+      ? this.collection.where('city', '==', city).orderBy('sequence_id', 'desc').limit(15)
+      : this.collection.orderBy('sequence_id', 'desc').limit(15);
+    if (opts.after != null) {
+      const after = parseInt(String(opts.after), 10);
+      if (!Number.isNaN(after)) query = query.startAfter(after);
+    }
+    const snapshot = await query.get();
+    const rows = [];
+    snapshot.forEach(doc => rows.push({ id: doc.id, ...doc.data() }));
+    return {
+      rows,
+      nextCursor: rows.length === 15 ? rows[rows.length - 1].sequence_id : null,
+    };
+  }
+
+  /**
+   * Get logs within a date range for export.
    */
   async exportByDateRange(opts = {}) {
     try {
@@ -154,19 +186,19 @@ class LedgerLogsService {
   }
 
   /**
-   * Update log entry with date and comments
+   * Update log entry with date and comments.
    */
   async updateLog(logId, updateData) {
     try {
       const { dateCalls, lastComments } = updateData;
       const updates = {};
-      
+
       if (dateCalls) updates.date = dateCalls;
       if (lastComments) updates.lastComments = lastComments;
       updates.updatedAt = new Date().toISOString();
-      
+
       await this.collection.doc(logId).update(updates);
-      
+
       const updatedDoc = await this.collection.doc(logId).get();
       return {
         success: true,

@@ -451,6 +451,34 @@ function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded,
               <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
             </div>
           </div>
+            <div className="ub__card ub__card--city">
+            <div className="ub__card-icon"><MapPin size={24} /></div>
+            <div className="ub__card-body">
+              <div className="ub__card-label">{isAdmin ? 'Location' : 'City'}</div>
+              <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
+            </div>
+          </div>
+            <div className="ub__card ub__card--city">
+            <div className="ub__card-icon"><MapPin size={24} /></div>
+            <div className="ub__card-body">
+              <div className="ub__card-label">{isAdmin ? 'Location' : 'City'}</div>
+              <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
+            </div>
+          </div>
+            <div className="ub__card ub__card--city">
+            <div className="ub__card-icon"><MapPin size={24} /></div>
+            <div className="ub__card-body">
+              <div className="ub__card-label">{isAdmin ? 'Location' : 'City'}</div>
+              <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
+            </div>
+          </div>
+            <div className="ub__card ub__card--city">
+            <div className="ub__card-icon"><MapPin size={24} /></div>
+            <div className="ub__card-body">
+              <div className="ub__card-label">{isAdmin ? 'Location' : 'City'}</div>
+              <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
+            </div>
+          </div>
 
           <div className="ub__card ub__card--id">
             <div className="ub__card-icon"><IdCard size={24} /></div>
@@ -466,7 +494,9 @@ function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded,
               <div className="ub__card-label">Role</div>
               <div className="ub__card-value" style={{ textTransform: 'capitalize' }}>{role}</div>
             </div>
+            
           </div>
+          
 
           {isAdmin && (
             <div

@@ -1,9 +1,8 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileUp, Check, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Upload, FileUp, ArrowLeft } from 'lucide-react';
 
 import Alert from '../components/Alert';
-import { apiFetch } from '../utils/api';
 import '../styles/pagestyles/excel.css';
 
 export default function ExcelPage() {
@@ -12,7 +11,10 @@ export default function ExcelPage() {
   const fileInputRef = useRef(null);
   const [alert, setAlert] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadSpeed, setUploadSpeed] = useState(0);
+  const [uploadPhase, setUploadPhase] = useState('uploading'); // 'uploading' | 'processing'
   const [fileType, setFileType] = useState(null);
+  const progressIntervalRef = useRef(null);
 
   const cards = [
     {
@@ -45,32 +47,81 @@ export default function ExcelPage() {
 
     const card = cards.find(c => c.id === fileType);
     setUploadProgress(0);
+    setUploadSpeed(0);
+    setUploadPhase('uploading');
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     setAlert({
       type: 'uploading',
       title: 'Uploading',
       message: `Uploading ${file.name}...`,
+      fileName: file.name,
+      fileSize: file.size,
+      fileCount: { current: 1, total: 1 },
     });
-
-    // Animate progress 0 → 80% over ~2s while waiting
-    const progressInterval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 80) { clearInterval(progressInterval); return 80; }
-        return prev + 2;
-      });
-    }, 50);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      // Enforce minimum 2.5s display time for the uploading alert
-      const [response] = await Promise.all([
-        apiFetch(card.endpoint, {
-          method: 'POST',
-          body: formData,
-        }),
-        new Promise(resolve => setTimeout(resolve, 2500)),
-      ]);
+      const uploadStartTime = Date.now();
+
+      const response = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            // Cap file-transfer phase at 60% — remaining 35% reserved for server processing
+            const progress = Math.round((e.loaded / e.total) * 60);
+            const elapsed = (Date.now() - uploadStartTime) / 1000;
+            const speed = elapsed > 0 ? e.loaded / elapsed : 0;
+            setUploadProgress(progress);
+            setUploadSpeed(speed);
+          }
+        };
+
+        xhr.upload.onloadend = () => {
+          // File bytes sent — server is now processing; switch to processing phase
+          setUploadSpeed(0);
+          setUploadPhase('processing');
+          let current = 60;
+          progressIntervalRef.current = setInterval(() => {
+            current = current + (99 - current) * 0.015;
+            setUploadProgress(Math.round(current));
+          }, 200);
+        };
+
+        xhr.onload = () => {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+          if (xhr.status === 401) {
+            window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+          }
+          resolve({
+            ok: xhr.status >= 200 && xhr.status < 300,
+            status: xhr.status,
+            headers: { get: (h) => xhr.getResponseHeader(h) },
+            json: () => Promise.resolve(JSON.parse(xhr.responseText)),
+            text: () => Promise.resolve(xhr.responseText),
+          });
+        };
+
+        xhr.onerror = () => {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+          reject(new Error('Network error during upload'));
+        };
+        xhr.onabort = () => {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+          reject(new Error('Upload aborted'));
+        };
+
+        const base = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+        const url = base ? `${base}${card.endpoint}` : card.endpoint;
+        xhr.open('POST', url);
+        xhr.withCredentials = true;
+        xhr.send(formData);
+      });
 
       // Try to parse response as JSON
       let data;
@@ -101,51 +152,51 @@ export default function ExcelPage() {
         throw new Error(data?.message || `Upload failed with status ${response.status}`);
       }
 
-      // Snap progress to 100% on success
-      clearInterval(progressInterval);
-      setUploadProgress(100);
+      const resetAlert = () => {
+        setAlert(null);
+        setActiveCard(null);
+        setUploadPhase('uploading');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      };
 
       // Handle outstanding upload success with validation results
       if (fileType === 'outstanding') {
-        const notFoundCount = data.notFound?.length || 0;
-
-        // Always show success on successful upload response.
-        // If some ledgers were not found, we still consider the upload processed.
         setAlert({
           type: 'success',
           title: 'Upload Successful',
-          message: (
-            <div className="upload-success-stats">
-              <span className="stat-item success-stat"><Check size={16} /> Processed: {data.processed} records</span>
-              <span className="stat-item success-stat"><Check size={16} /> Updated: {data.updated} ledgers</span>
-              <span className="stat-item success-stat"><Check size={16} /> Logs created: {data.logsCreated}</span>
-              {notFoundCount > 0 && (
-                <span className="stat-item warning-stat"><AlertTriangle size={16} /> Not found in master: {notFoundCount}</span>
-              )}
-            </div>
-          ),
-          onConfirm: () => {
-            setAlert(null);
-            setActiveCard(null);
-            if (fileInputRef.current) fileInputRef.current.value = '';
+          stats: {
+            type: 'outstanding',
+            processed: data.processed,
+            updated: data.updated,
+            logsCreated: data.logsCreated,
+            found: Array.isArray(data.found) ? data.found.length : (data.found ?? 0),
+            notFound: Array.isArray(data.notFound) ? data.notFound.length : (data.notFound ?? 0),
+            fileName: data.fileName,
           },
+          onConfirm: resetAlert,
         });
       } else {
         // Master upload success
         setAlert({
           type: 'success',
           title: 'Upload Successful',
-          message: `${data.inserted} records imported from ${data.fileName}`,
-          onConfirm: () => {
-            setAlert(null);
-            setActiveCard(null);
-            if (fileInputRef.current) fileInputRef.current.value = '';
+          stats: {
+            type: 'master',
+            inserted: data.inserted,
+            updated: data.updated,
+            fileName: data.fileName,
           },
+          onConfirm: resetAlert,
         });
       }
     } catch (error) {
-      clearInterval(progressInterval);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       setUploadProgress(0);
+      setUploadSpeed(0);
+      setUploadPhase('uploading');
       console.error('Upload error:', error);
       setAlert({
         type: 'error',
@@ -218,6 +269,12 @@ export default function ExcelPage() {
           onConfirm={alert.onConfirm}
           onCancel={alert.onCancel}
           progress={uploadProgress}
+          fileName={alert.fileName}
+          fileSize={alert.fileSize}
+          fileCount={alert.fileCount}
+          uploadSpeed={uploadSpeed}
+          uploadPhase={uploadPhase}
+          stats={alert.stats}
         />
       )}
     </div>

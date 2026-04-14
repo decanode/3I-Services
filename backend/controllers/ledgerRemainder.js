@@ -2,6 +2,23 @@ const ledgerRemainderService = require('../services/ledgerRemainder');
 const ledgerLogsService = require('../services/ledgerLogs');
 const { processCustomerData } = require('../utils/customerValidator');
 
+/**
+ * GET /api/ledger-remainder/paged?after={sequence_id}
+ * Cursor-based pagination — always reads exactly 15 Firestore documents.
+ * City access control applied automatically for non-admin users.
+ */
+exports.listPaged = async (req, res) => {
+  try {
+    const cityFilter = req.user.role === 'admin' ? null : (req.user.city || null);
+    const after = req.query.after != null ? parseInt(req.query.after, 10) : undefined;
+    const result = await ledgerRemainderService.listPaged({ after, city: cityFilter });
+    res.json({ count: result.rows.length, rows: result.rows, nextCursor: result.nextCursor });
+  } catch (error) {
+    console.error('Error listing ledger remainders (paged):', error);
+    res.status(500).json({ message: 'Failed to fetch ledger remainders', error: error.message });
+  }
+};
+
 exports.list = async (req, res) => {
   try {
     const cityFilter = req.user.role === 'admin' ? null : (req.user.city || null);
@@ -177,7 +194,7 @@ exports.update = async (req, res) => {
       const userId = req.user?.userId;
 
       const dateChanged = String(nextCallDate || '') !== String(previousData.nextCallDate || '');
-      const commentsChanged = String(lastComments || '') !== String(previousData.lastComments || '');
+      const commentsChanged = String(lastComments || '') !== '';
 
       if (dateChanged || commentsChanged) {
         const changedFields = [];

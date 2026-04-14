@@ -138,9 +138,38 @@ export const COUNTRY_OPTIONS = [
 ];
 
 // Pagination Component
-export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-  if (totalPages <= 1) return null;
+// Classic mode:  <Pagination currentPage={n} totalPages={t} onPageChange={fn} />
+// Cursor mode:   <Pagination currentPage={n} hasPrev={bool} hasNext={bool} onPrev={fn} onNext={fn} />
+export const Pagination = ({ currentPage, totalPages, onPageChange, hasPrev, hasNext, onPrev, onNext }) => {
+  // Cursor-based mode — no total page count available
+  if (onPrev !== undefined || onNext !== undefined) {
+    const showPagination = hasPrev || hasNext;
+    if (!showPagination) return null;
+    return (
+      <div className="pagination-container">
+        <button
+          className="pagination-btn"
+          onClick={onPrev}
+          disabled={!hasPrev}
+        >
+          Previous
+        </button>
+        <span className="pagination-info">
+          Page {currentPage}{!hasNext ? ' (last page)' : ''}
+        </span>
+        <button
+          className="pagination-btn"
+          onClick={onNext}
+          disabled={!hasNext}
+        >
+          Next
+        </button>
+      </div>
+    );
+  }
 
+  // Classic mode — total pages known
+  if (totalPages <= 1) return null;
   return (
     <div className="pagination-container">
       <button
@@ -150,11 +179,9 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       >
         Previous
       </button>
-      
       <span className="pagination-info">
         Page {currentPage} of {totalPages}
       </span>
-      
       <button
         className="pagination-btn"
         onClick={() => onPageChange(currentPage + 1)}

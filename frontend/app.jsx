@@ -15,6 +15,14 @@ const ViewLogPage = lazy(() => import('./src/pages/view-log'));
 const ViewOutstandingsPage = lazy(() => import('./src/pages/view-outstandings'));
 const UserProfilePage = lazy(() => import('./src/components/userprofile'));
 
+// Dev-only Firebase monitor — file is gitignored, silently absent on production clones
+let DevMonitor = null;
+if (import.meta.env.DEV) {
+  DevMonitor = lazy(() =>
+    import('./src/dev/FirebaseMonitor.jsx').catch(() => ({ default: () => null }))
+  );
+}
+
 function ProtectedRoute({ children, activeTab }) {
   const { isLoggedIn } = useAuth();
   if (!isLoggedIn) return <Navigate to="/login" replace />;
@@ -43,6 +51,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" /></div>}>
+        {DevMonitor && <DevMonitor />}
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           

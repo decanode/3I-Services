@@ -24,6 +24,10 @@ const LEDGER_REMAINDER_FIELDS = [
   'cemail3',
 ];
 
+// Note: lastComments is now an array of objects with format:
+// [{ text: string, date: ISO date string }, ...]
+// Maximum 5 comments are kept
+
 const LEDGER_REMAINDER_COLLECTION_NAME = 'Outstanding_Remainder';
 
 function createLedgerRemainderEntry(ledger_id, ledger_name, city, debit = 0, credit = 0, nextCallDate = null, comments = null, group = null, contact = null, mobile = null, email = null) {

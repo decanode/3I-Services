@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { apiFetch } from '../utils/api';
+import { useOutstandingsData } from '../hooks/useOutstandingsData';
 import Table from '../components/Table';
+import { Pagination } from '../components/Button';
 import PageLoader from '../components/loading';
 import Alert from '../components/Alert';
 import '../styles/pagestyles/view-outstandings.css';
@@ -15,53 +16,52 @@ function formatCurrency(value) {
   return num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
+function formatDate(val) {
+  if (!val) return '—';
+  const d = new Date(val);
+  return isNaN(d) ? val : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 
 export default function ViewOutstandingsPage() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // Cursor stack — last element is the current page's cursor (null = page 1)
+  const [cursorStack, setCursorStack] = useState([null]);
+  const [pageIndex, setPageIndex] = useState(1);
   const [showLoader, setShowLoader] = useState(true);
-  const [alert, setAlert] = useState(null);
 
-  const load = useCallback(async () => {
-    setAlert(null);
-    setLoading(true);
-    try {
-      const res = await apiFetch('/api/ledger-remainder?limit=1000');
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.message || data.error || 'Failed to load');
-      }
-      setRows(Array.isArray(data.rows) ? data.rows : []);
-    } catch (e) {
-      setAlert({
-        type: 'error',
-        title: 'Load Failed',
-        message: e.message || 'Failed to load outstanding data',
-        onConfirm: () => { setAlert(null); load(); },
-        onCancel: () => setAlert(null),
-      });
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const currentCursor = cursorStack[cursorStack.length - 1];
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // React Query: serves from 5-min cache on revisit, no Firestore reads
+  const { data, isLoading, isError, error, refetch } = useOutstandingsData(currentCursor);
+
+  const rows       = data?.rows       ?? [];
+  const nextCursor = data?.nextCursor ?? null;
+
+  const goNext = () => {
+    if (nextCursor == null) return;
+    setCursorStack(prev => [...prev, nextCursor]);
+    setPageIndex(p => p + 1);
+  };
+
+  const goPrev = () => {
+    if (cursorStack.length <= 1) return;
+    setCursorStack(prev => prev.slice(0, -1));
+    setPageIndex(p => p - 1);
+  };
 
   const columns = useMemo(() => [
     {
       key: 'ledger_name',
       label: 'Ledger Name',
-      width: '300px',
+      width: '280px',
       align: 'center',
     },
     {
-      key: 'city',
-      label: 'City',
-      width: '150px',
+      key: 'group',
+      label: 'Group',
+      width: '200px',
       align: 'center',
     },
     {
@@ -78,7 +78,13 @@ export default function ViewOutstandingsPage() {
       align: 'center',
       render: (item) => formatCurrency(item.credit),
     },
-
+    {
+      key: 'nextCallDate',
+      label: 'Next Call Date',
+      width: '160px',
+      align: 'center',
+      render: (item) => formatDate(item.nextCallDate),
+    },
   ], []);
 
   return (
@@ -86,19 +92,19 @@ export default function ViewOutstandingsPage() {
       {showLoader && (
         <PageLoader
           pageName="Outstandings"
-          isDataLoading={loading}
-          duration={1500}
+          isDataLoading={isLoading}
+          duration={2500}
           onComplete={() => setShowLoader(false)}
         />
       )}
 
-      {alert && (
+      {isError && (
         <Alert
-          type={alert.type}
-          title={alert.title}
-          message={alert.message}
-          onConfirm={alert.onConfirm}
-          onCancel={alert.onCancel}
+          type="error"
+          title="Load Failed"
+          message={error?.message || 'Failed to load outstanding data'}
+          onConfirm={() => refetch()}
+          onCancel={() => {}}
         />
       )}
 
@@ -111,7 +117,7 @@ export default function ViewOutstandingsPage() {
       </div>
 
       <div className="outstandings-table-section">
-        {loading ? (
+        {isLoading ? (
           <div className="outstandings-loading">Loading...</div>
         ) : (
           <div className="outstandings-table-container">
@@ -123,7 +129,15 @@ export default function ViewOutstandingsPage() {
               headerGradient={true}
               tableClassName="outstandings-table"
               containerClassName="outstandings-scroll-container"
-              minWidth={600}
+              minWidth={800}
+            />
+
+            <Pagination
+              currentPage={pageIndex}
+              hasPrev={cursorStack.length > 1}
+              hasNext={nextCursor != null}
+              onPrev={goPrev}
+              onNext={goNext}
             />
           </div>
         )}

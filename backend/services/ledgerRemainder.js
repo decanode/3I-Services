@@ -11,7 +11,7 @@ class LedgerRemainderService {
     this.collection = db.collection(LEDGER_REMAINDER_COLLECTION_NAME);
   }
 
-  async upsertFromExcelRecords(records, meta = {}) {
+  async upsertFromExcelRecords(records, meta = {}, newLedgerIdMap = new Map()) {
     const remainders = extractUniqueLedgerRemainders(records);
     
     if (!remainders.length) {
@@ -39,10 +39,18 @@ class LedgerRemainderService {
 
         let ref;
         if (snapshot.empty) {
-          // Create new entry with empty nextCallDate for user to populate
-          ref = this.collection.doc();
+          // Use the sequence_id assigned by excelMaster so OR- and M- IDs share the same number.
+          const seqId = newLedgerIdMap.get(remainder.ledger_id);
+          if (seqId != null) {
+            ref = this.collection.doc(`OR${seqId}`);
+          } else {
+            // Defensive fallback — should not occur in normal upload flow.
+            ref = this.collection.doc();
+            console.warn('[upsertFromExcelRecords] No sequence_id for ledger_id:', remainder.ledger_id);
+          }
           const newEntry = {
             ...remainder,
+            ...(seqId != null ? { sequence_id: seqId } : {}),
             // Ensure nextCallDate is initialized as empty
             nextCallDate: remainder.nextCallDate || '',
             createdAt: importedAt,
@@ -50,7 +58,7 @@ class LedgerRemainderService {
             sourceFileName: fileName || null,
             updatedAt: importedAt,
           };
-          console.log('[upsertFromExcelRecords] Creating new record:', remainder.ledger_id, 'with empty nextCallDate');
+          console.log('[upsertFromExcelRecords] Creating new record:', remainder.ledger_id, 'doc OR' + seqId, 'with empty nextCallDate');
           batch.set(ref, newEntry);
           inserted += 1;
         } else {
@@ -256,6 +264,41 @@ class LedgerRemainderService {
     return row;
   }
 
+  /**
+   * Cursor-based paginated list — always reads exactly 15 documents.
+   * Respects city-based access control when opts.city is provided.
+   * Pass opts.after = sequence_id of the last visible row to advance the cursor.
+   *
+   * @param {{ after?: number, city?: string }} opts
+   * @returns {{ rows: object[], nextCursor: number|null }}
+   */
+  async listPaged(opts = {}) {
+    const city = opts.city ? String(opts.city).trim().toLowerCase() : null;
+    let query = city
+      ? this.collection.where('city', '==', city).orderBy('sequence_id', 'desc').limit(15)
+      : this.collection.orderBy('sequence_id', 'desc').limit(15);
+    if (opts.after != null) {
+      const after = parseInt(String(opts.after), 10);
+      if (!Number.isNaN(after)) query = query.startAfter(after);
+    }
+    const snapshot = await query.get();
+    const rows = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      rows.push({
+        id: doc.id,
+        ...data,
+        debit: data.debit != null ? parseFloat(data.debit) : 0,
+        credit: data.credit != null ? parseFloat(data.credit) : 0,
+        group: data.group || '-',
+      });
+    });
+    return {
+      rows,
+      nextCursor: rows.length === 15 ? rows[rows.length - 1].sequence_id : null,
+    };
+  }
+
   async delete(id) {
     try {
       await this.collection.doc(id).delete();
@@ -269,7 +312,7 @@ class LedgerRemainderService {
   async updateByLedgerId(ledger_id, updateData = {}) {
     try {
       console.log('[LedgerRemainderService] updateByLedgerId called with:', { ledger_id, updateData });
-      
+
       // Find the document by ledger_id
       const snapshot = await this.collection
         .where('ledger_id', '==', String(ledger_id).trim())
@@ -277,7 +320,7 @@ class LedgerRemainderService {
         .get();
 
       console.log('[LedgerRemainderService] Query snapshot - found', snapshot.size, 'documents');
-      
+
       if (snapshot.empty) {
         console.log('[LedgerRemainderService] No documents found for ledger_id:', ledger_id);
         throw new Error(`Ledger not found for id: ${ledger_id}`);
@@ -291,10 +334,45 @@ class LedgerRemainderService {
         updatedAt: new Date().toISOString(),
       };
 
-      // Copy all fields from updateData to updatePayload
-      // This ensures all customer fields and other fields are included
+      // Handle lastComments if provided — maintain max 5 comments array
+      if (updateData.hasOwnProperty('lastComments') && updateData.lastComments !== null && updateData.lastComments !== undefined) {
+        const incomingComment = String(updateData.lastComments).trim();
+
+        if (incomingComment) {
+          // Get existing comments array
+          let commentsArray = Array.isArray(docData.lastComments) ? [...docData.lastComments] : [];
+
+          // Add new comment with timestamp
+          const newCommentEntry = {
+            text: incomingComment,
+            date: new Date().toISOString(),
+          };
+
+          commentsArray.push(newCommentEntry);
+
+          // Keep only last 5 comments (FIFO — remove oldest when 6th is added)
+          if (commentsArray.length > 5) {
+            commentsArray = commentsArray.slice(-5);
+          }
+
+          updatePayload.lastComments = commentsArray;
+          console.log('[LedgerRemainderService] Updated comments array:', commentsArray);
+        } else {
+          // If empty comment provided, keep existing comments
+          updatePayload.lastComments = Array.isArray(docData.lastComments) ? docData.lastComments : [];
+        }
+      } else {
+        // If lastComments not in updateData, preserve existing
+        if (!updateData.hasOwnProperty('lastComments')) {
+          updatePayload.lastComments = Array.isArray(docData.lastComments) ? docData.lastComments : [];
+        }
+      }
+
+      // Copy all other fields from updateData to updatePayload
       Object.keys(updateData).forEach(key => {
-        updatePayload[key] = updateData[key];
+        if (key !== 'lastComments') { // Skip lastComments as we've already handled it
+          updatePayload[key] = updateData[key];
+        }
       });
 
       console.log('[LedgerRemainderService] Complete updatePayload:', JSON.stringify(updatePayload, null, 2));
@@ -322,6 +400,7 @@ class LedgerRemainderService {
             cname3: verifyData.cname3,
             cmob3: verifyData.cmob3,
             cemail3: verifyData.cemail3,
+            lastComments: verifyData.lastComments,
             updatedAt: verifyData.updatedAt
           });
         }

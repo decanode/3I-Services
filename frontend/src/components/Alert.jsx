@@ -3,7 +3,6 @@ import {CheckCircle2,
   AlertTriangle,
   Loader2,
   CloudUpload,
-  X,
   FileText,
   Check
 } from 'lucide-react';
@@ -13,6 +12,22 @@ import {
   useRef
 } from 'react';
 
+function formatFileSize(bytes) {
+  if (typeof bytes === 'string') return bytes;
+  if (!bytes || bytes <= 0) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  return `${(bytes / (1024 ** 3)).toFixed(2)} GB`;
+}
+
+function formatSpeed(bps) {
+  if (!bps || bps <= 0) return null;
+  if (bps < 1024) return `${bps.toFixed(0)} B/s`;
+  if (bps < 1024 * 1024) return `${(bps / 1024).toFixed(1)} KB/s`;
+  return `${(bps / (1024 * 1024)).toFixed(1)} MB/s`;
+}
+
 export default function Alert({
   type,
   title,
@@ -21,8 +36,10 @@ export default function Alert({
   onCancel,
   progress = 0,
   fileName = 'file.pdf',
-  fileSize = '4.2 MB',
-  fileCount = { current: 1, total: 3 },
+  fileSize = 0,
+  fileCount = { current: 1, total: 1 },
+  uploadSpeed = 0,
+  uploadPhase = 'uploading',
   stats = {},
   notFoundLedgers = [],
 }) {
@@ -82,14 +99,73 @@ export default function Alert({
       {/* SUCCESS */}
       {type === 'success' && (
         <div ref={alertCardRef} className="alert-card alert-card--success">
-          <div className="alert-content">
+          <div className="alert-content alert-content--success">
             <div className="alert-icon-wrapper alert-icon-wrapper--success pulse-ring">
               <div className="alert-icon alert-icon--success">
                 <CheckCircle2 size={32} />
               </div>
             </div>
             <h3 className="alert-title">{title}</h3>
-            <div className="alert-message">{message}</div>
+
+            {/* Outstanding upload stats */}
+            {stats?.type === 'outstanding' && (
+              <div className="alert-success-stats">
+                <div className="alert-success-stat-item">
+                  <span className="alert-success-stat-label">Processed</span>
+                  <span className="alert-success-stat-value">{stats.processed}</span>
+                </div>
+                <div className="alert-success-stat-item">
+                  <span className="alert-success-stat-label">Updated</span>
+                  <span className="alert-success-stat-value alert-success-stat-value--good">{stats.updated}</span>
+                </div>
+                <div className="alert-success-stat-item">
+                  <span className="alert-success-stat-label">Logs Created</span>
+                  <span className="alert-success-stat-value">{stats.logsCreated}</span>
+                </div>
+                {stats.notFound > 0 && (
+                  <div className="alert-success-stat-item alert-success-stat-item--warn">
+                    <span className="alert-success-stat-label">Not in Master</span>
+                    <span className="alert-success-stat-value alert-success-stat-value--warn">{stats.notFound}</span>
+                  </div>
+                )}
+                {stats.fileName && (
+                  <div className="alert-success-file-tag">
+                    <FileText size={13} />
+                    <span>{stats.fileName}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Master upload stats */}
+            {stats?.type === 'master' && (
+              <div className="alert-success-stats">
+                <div className="alert-success-stat-item">
+                  <span className="alert-success-stat-label">Total</span>
+                  <span className="alert-success-stat-value">{(stats.inserted ?? 0) + (stats.updated ?? 0)}</span>
+                </div>
+                <div className="alert-success-stat-item">
+                  <span className="alert-success-stat-label">Inserted</span>
+                  <span className="alert-success-stat-value alert-success-stat-value--good">{stats.inserted ?? 0}</span>
+                </div>
+                <div className="alert-success-stat-item">
+                  <span className="alert-success-stat-label">Updated</span>
+                  <span className="alert-success-stat-value">{stats.updated ?? 0}</span>
+                </div>
+                {stats.fileName && (
+                  <div className="alert-success-file-tag">
+                    <FileText size={13} />
+                    <span>{stats.fileName}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Fallback plain message */}
+            {!stats?.type && message && (
+              <div className="alert-message">{message}</div>
+            )}
+
             <button onClick={onConfirm || closePopup} className="alert-btn alert-btn--success">
               Continue
             </button>
@@ -199,18 +275,26 @@ export default function Alert({
         </div>
       )}
 
-      {/* UPLOADING */}
+      {/* UPLOADING / PROCESSING */}
       {type === 'uploading' && (
         <div ref={alertCardRef} className="alert-card alert-card--uploading">
           <div className="alert-upload-header">
             <div className="alert-upload-info">
               <div className="alert-upload-icon">
-                <CloudUpload size={24} />
+                {uploadPhase === 'processing'
+                  ? <Loader2 size={24} className="alert-spin" />
+                  : <CloudUpload size={24} />
+                }
               </div>
               <div>
-                <h3 className="alert-upload-title">{title}</h3>
+                <h3 className="alert-upload-title">
+                  {uploadPhase === 'processing' ? 'Processing' : title}
+                </h3>
                 <p className="alert-upload-subtitle">
-                  Uploading {fileCount.current} of {fileCount.total} files
+                  {uploadPhase === 'processing'
+                    ? 'Checking records, updating & logging...'
+                    : `Uploading ${fileCount.current} of ${fileCount.total} ${fileCount.total === 1 ? 'file' : 'files'}`
+                  }
                 </p>
               </div>
             </div>
@@ -224,23 +308,23 @@ export default function Alert({
               <FileText size={20} className="alert-file-icon" />
               <div className="alert-file-details">
                 <p className="alert-file-name">{fileName}</p>
-                <p className="alert-file-size">{fileSize}</p>
+                <p className="alert-file-size">
+                  {uploadPhase === 'processing'
+                    ? 'Processing data...'
+                    : `${formatFileSize(fileSize)}${formatSpeed(uploadSpeed) ? ` · ${formatSpeed(uploadSpeed)}` : ''}`
+                  }
+                </p>
               </div>
               {progress === 100 && <Check size={18} className="alert-file-check" />}
             </div>
             <div className="alert-progress-bar">
               <div
-                className={`alert-progress-fill ${progress === 100 ? 'alert-progress-fill--done' : ''}`}
+                className={`alert-progress-fill ${progress === 100 ? 'alert-progress-fill--done' : ''} ${uploadPhase === 'processing' ? 'alert-progress-fill--processing' : ''}`}
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
           </div>
 
-          {progress === 100 && (
-            <button onClick={closePopup} className="alert-btn alert-btn--done">
-              Done
-            </button>
-          )}
         </div>
       )}
     </div>

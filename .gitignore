@@ -7,3 +7,4 @@ dist
 *.log
 package-lock.json
 frontend/public/cards/
+frontend/src/dev/
