@@ -38,7 +38,8 @@ const EXCEL_MASTER_FIELDS = [
   'limitbill',
   'limitday',
   'limittype',
-  'freez'
+  'freez',
+  'sourcefilename-master'
 ];
 
 const ALLOWED_FIELD_SET = new Set(EXCEL_MASTER_FIELDS);

@@ -25,10 +25,11 @@ import '../styles/componentstyles/Table.css';
  * - groupByColumn: Column key to group by (e.g., 'date')
  * - containerClassName: Extra class on the scroll wrapper
  * - tableClassName: Extra class on the <table>
+ * - footer: ReactNode to render as table footer (e.g., pagination)
  */
-const Table = ({ 
-  columns = [], 
-  data = [], 
+const Table = ({
+  columns = [],
+  data = [],
   rows = 0,
   renderActions = null,
   noDataMessage = 'No records found',
@@ -42,7 +43,9 @@ const Table = ({
   renderCell = null,
   groupByColumn = null,
   containerClassName = '',
-  tableClassName = ''
+  tableClassName = '',
+  footer = null,
+  onRowClick = null,
 }) => {
   // Calculate rowspans for grouped column
   const calculateRowspans = () => {
@@ -97,10 +100,11 @@ const Table = ({
 
   return (
     <div className={containerClasses}>
-      <table 
-        className={tableClasses}
-        style={{ minWidth: `${minWidth}px` }}
-      >
+      <div className="reusable-table-wrapper">
+        <table 
+          className={tableClasses}
+          style={{ minWidth: `${minWidth}px` }}
+        >
         {showHeader ? (
         <thead>
           <tr>
@@ -133,7 +137,11 @@ const Table = ({
             </tr>
           ) : (
             (template ? templateData : data).map((item, rowIndex) => (
-              <tr key={item._id || item.id || rowIndex}>
+              <tr
+                key={item._id || item.id || rowIndex}
+                onClick={onRowClick ? () => onRowClick(item, rowIndex) : undefined}
+                style={onRowClick ? { cursor: 'pointer' } : undefined}
+              >
                 {columns.map((col, colIndex) => {
                   // Check if this column should be grouped and if this row should be skipped
                   const isGroupedColumn = groupByColumn && col.key === groupByColumn;
@@ -182,6 +190,8 @@ const Table = ({
           )}
         </tbody>
       </table>
+      </div>
+      {footer && <div className="table-footer">{footer}</div>}
     </div>
   );
 };

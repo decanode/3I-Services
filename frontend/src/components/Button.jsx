@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Search, ArrowLeft } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Search, ArrowLeft } from 'lucide-react';
 import '../styles/componentstyles/Button.css';
 
 // Animated Submit Button with border animation
@@ -141,28 +141,37 @@ export const COUNTRY_OPTIONS = [
 // Classic mode:  <Pagination currentPage={n} totalPages={t} onPageChange={fn} />
 // Cursor mode:   <Pagination currentPage={n} hasPrev={bool} hasNext={bool} onPrev={fn} onNext={fn} />
 export const Pagination = ({ currentPage, totalPages, onPageChange, hasPrev, hasNext, onPrev, onNext }) => {
-  // Cursor-based mode — no total page count available
-  if (onPrev !== undefined || onNext !== undefined) {
-    const showPagination = hasPrev || hasNext;
-    if (!showPagination) return null;
+  const isCursor = onPrev !== undefined || onNext !== undefined;
+
+  // Cursor-based mode
+  if (isCursor) {
     return (
-      <div className="pagination-container">
+      <div className="pagination-footer">
         <button
           className="pagination-btn"
           onClick={onPrev}
           disabled={!hasPrev}
+          aria-label="Previous page"
         >
-          Previous
+          <ChevronLeft size={16} className="pagination-btn__icon" />
+          <span className="pagination-btn__label">Previous</span>
         </button>
-        <span className="pagination-info">
-          Page {currentPage}{!hasNext ? ' (last page)' : ''}
-        </span>
+
+        <div className="pagination-center">
+          <span className="pagination-pill">
+            <span className="pagination-pill__page">Page {currentPage}</span>
+            {!hasNext && currentPage > 1 && <span className="pagination-pill__badge">Last</span>}
+          </span>
+        </div>
+
         <button
           className="pagination-btn"
           onClick={onNext}
           disabled={!hasNext}
+          aria-label="Next page"
         >
-          Next
+          <span className="pagination-btn__label">Next</span>
+          <ChevronRight size={16} className="pagination-btn__icon" />
         </button>
       </div>
     );
@@ -171,23 +180,33 @@ export const Pagination = ({ currentPage, totalPages, onPageChange, hasPrev, has
   // Classic mode — total pages known
   if (totalPages <= 1) return null;
   return (
-    <div className="pagination-container">
+    <div className="pagination-footer">
       <button
         className="pagination-btn"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
+        aria-label="Previous page"
       >
-        Previous
+        <ChevronLeft size={16} className="pagination-btn__icon" />
+        <span className="pagination-btn__label">Previous</span>
       </button>
-      <span className="pagination-info">
-        Page {currentPage} of {totalPages}
-      </span>
+
+      <div className="pagination-center">
+        <span className="pagination-pill">
+          <span className="pagination-pill__page">Page {currentPage}</span>
+          <span className="pagination-pill__divider">/</span>
+          <span className="pagination-pill__total">{totalPages}</span>
+        </span>
+      </div>
+
       <button
         className="pagination-btn"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
+        aria-label="Next page"
       >
-        Next
+        <span className="pagination-btn__label">Next</span>
+        <ChevronRight size={16} className="pagination-btn__icon" />
       </button>
     </div>
   );

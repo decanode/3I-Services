@@ -3,6 +3,7 @@ const {
   LEDGER_REMAINDER_COLLECTION_NAME,
   extractUniqueLedgerRemainders,
 } = require('../models/ledgerRemainder');
+const counterService = require('./counter');
 
 const BATCH_MAX = 400;
 
@@ -11,7 +12,7 @@ class LedgerRemainderService {
     this.collection = db.collection(LEDGER_REMAINDER_COLLECTION_NAME);
   }
 
-  async upsertFromExcelRecords(records, meta = {}, newLedgerIdMap = new Map()) {
+  async upsertFromExcelRecords(records, meta = {}) {
     const remainders = extractUniqueLedgerRemainders(records);
     
     if (!remainders.length) {
@@ -39,26 +40,16 @@ class LedgerRemainderService {
 
         let ref;
         if (snapshot.empty) {
-          // Use the sequence_id assigned by excelMaster so OR- and M- IDs share the same number.
-          const seqId = newLedgerIdMap.get(remainder.ledger_id);
-          if (seqId != null) {
-            ref = this.collection.doc(`OR${seqId}`);
-          } else {
-            // Defensive fallback — should not occur in normal upload flow.
-            ref = this.collection.doc();
-            console.warn('[upsertFromExcelRecords] No sequence_id for ledger_id:', remainder.ledger_id);
-          }
+          ref = this.collection.doc(); // auto-generated ID
           const newEntry = {
             ...remainder,
-            ...(seqId != null ? { sequence_id: seqId } : {}),
-            // Ensure nextCallDate is initialized as empty
             nextCallDate: remainder.nextCallDate || '',
             createdAt: importedAt,
             createdByUserId: userId || null,
             sourceFileName: fileName || null,
             updatedAt: importedAt,
           };
-          console.log('[upsertFromExcelRecords] Creating new record:', remainder.ledger_id, 'doc OR' + seqId, 'with empty nextCallDate');
+          console.log('[upsertFromExcelRecords] Creating new record:', remainder.ledger_id);
           batch.set(ref, newEntry);
           inserted += 1;
         } else {
@@ -89,6 +80,11 @@ class LedgerRemainderService {
     }
 
     console.log('[upsertFromExcelRecords] Complete - Inserted:', inserted, 'Updated:', updated);
+
+    // Update counter: totaldebit, totalcredit (fire-and-forget)
+    counterService.updateLedgerTotals().catch(e =>
+      console.error('[counter] totals update failed:', e));
+
     return { inserted, updated };
   }
 
@@ -264,22 +260,17 @@ class LedgerRemainderService {
     return row;
   }
 
-  /**
-   * Cursor-based paginated list — always reads exactly 15 documents.
-   * Respects city-based access control when opts.city is provided.
-   * Pass opts.after = sequence_id of the last visible row to advance the cursor.
-   *
-   * @param {{ after?: number, city?: string }} opts
-   * @returns {{ rows: object[], nextCursor: number|null }}
-   */
+
   async listPaged(opts = {}) {
     const city = opts.city ? String(opts.city).trim().toLowerCase() : null;
+    // Sort: nextCallDate DESC (records with a date set appear before undated ''), then ledger_id ASC as tiebreaker.
+    // Requires composite indexes: [nextCallDate DESC, ledger_id ASC] and [city ASC, nextCallDate DESC, ledger_id ASC].
     let query = city
-      ? this.collection.where('city', '==', city).orderBy('sequence_id', 'desc').limit(15)
-      : this.collection.orderBy('sequence_id', 'desc').limit(15);
+      ? this.collection.where('city', '==', city).orderBy('nextCallDate', 'desc').orderBy('ledger_id', 'asc').limit(15)
+      : this.collection.orderBy('nextCallDate', 'desc').orderBy('ledger_id', 'asc').limit(15);
     if (opts.after != null) {
-      const after = parseInt(String(opts.after), 10);
-      if (!Number.isNaN(after)) query = query.startAfter(after);
+      // Composite cursor: { nextCallDate, ledger_id } from the last row of the previous page.
+      query = query.startAfter(opts.after.nextCallDate ?? '', opts.after.ledger_id);
     }
     const snapshot = await query.get();
     const rows = [];
@@ -293,9 +284,10 @@ class LedgerRemainderService {
         group: data.group || '-',
       });
     });
+    const lastRow = rows.length === 15 ? rows[rows.length - 1] : null;
     return {
       rows,
-      nextCursor: rows.length === 15 ? rows[rows.length - 1].sequence_id : null,
+      nextCursor: lastRow ? { nextCallDate: lastRow.nextCallDate ?? '', ledger_id: lastRow.ledger_id } : null,
     };
   }
 
@@ -309,7 +301,7 @@ class LedgerRemainderService {
     }
   }
 
-  async updateByLedgerId(ledger_id, updateData = {}) {
+  async updateByLedgerId(ledger_id, updateData = {}, meta = {}) {
     try {
       console.log('[LedgerRemainderService] updateByLedgerId called with:', { ledger_id, updateData });
 
@@ -346,6 +338,7 @@ class LedgerRemainderService {
           const newCommentEntry = {
             text: incomingComment,
             date: new Date().toISOString(),
+            userId: meta.userId || null,
           };
 
           commentsArray.push(newCommentEntry);
@@ -381,6 +374,12 @@ class LedgerRemainderService {
       try {
         await docRef.update(updatePayload);
         console.log('[LedgerRemainderService] Firestore update successful for ledger:', ledger_id);
+
+        // Update counter totals if debit or credit changed
+        if ('debit' in updatePayload || 'credit' in updatePayload) {
+          counterService.updateLedgerTotals().catch(e =>
+            console.error('[counter] totals update failed:', e));
+        }
 
         // Log which fields were updated
         const updatedFields = Object.keys(updatePayload).filter(key => updatePayload[key] !== null && updatePayload[key] !== undefined);

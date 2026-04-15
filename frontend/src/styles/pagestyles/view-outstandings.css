@@ -24,6 +24,9 @@
   background: linear-gradient(135deg, var(--color-accent-light-green) 0%, rgba(109, 158, 81, 0.05) 100%);
   border-bottom: 2px solid var(--color-accent-light-green);
   box-shadow: 0 2px 8px rgba(109, 158, 81, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .outstandings-header h1 {
@@ -142,6 +145,40 @@
   border-bottom: none;
 }
 
+/* ========== TOOLBAR ========== */
+.outstandings-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-neutral-gray-200);
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+/* ========== SORTABLE COLUMN HEADER BUTTON ========== */
+.outstandings-sort-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+}
+
+.outstandings-sort-btn:hover {
+  opacity: 0.75;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .outstandings-page {
@@ -216,73 +253,31 @@
   background: rgba(109, 158, 81, 0.8);
 }
 
-/* ========== PAGINATION ========== */
-.outstandings-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.6rem 1rem;
-  border-top: 1px solid var(--color-neutral-gray-200);
-  background: #fafafa;
-  flex-shrink: 0;
+/* ========== PAGINATION FOOTER ========== */
+.outstandings-scroll-container .table-footer {
+  background: linear-gradient(135deg, #f5f8f5 0%, #edf2ed 100%);
+  border-top: 2px solid var(--color-accent-light-green);
 }
 
-.outstandings-pagination-info {
-  font-size: 0.8rem;
-  color: var(--color-neutral-gray-500);
-  font-weight: 500;
+.outstandings-scroll-container .table-footer .pagination-footer {
+  background: transparent;
+  border-top: none;
+  padding: 0;
 }
 
-.outstandings-pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.outstandings-scroll-container .table-footer .pagination-footer::before {
+  display: none;
 }
 
-.outstandings-page-btn {
-  min-width: 2rem;
-  height: 2rem;
-  padding: 0 0.4rem;
-  border: 1px solid var(--color-neutral-gray-200);
-  border-radius: 0.4rem;
-  background: white;
-  color: var(--color-neutral-dark);
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.outstandings-page-btn:hover:not(:disabled) {
-  background: var(--color-accent-light-green);
-  border-color: var(--color-accent-light-green);
-}
-
-.outstandings-page-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.outstandings-page-btn--active {
-  background: var(--color-accent-dark-green, #2A4759);
-  border-color: var(--color-accent-dark-green, #2A4759);
-  color: white;
-}
-
-.outstandings-page-ellipsis {
-  font-size: 0.8rem;
-  color: var(--color-neutral-gray-500);
-  padding: 0 0.25rem;
-  user-select: none;
+.outstandings-scroll-container .pagination-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2A4759 0%, #1d3d4e 100%);
+  border-color: #2A4759;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(42, 71, 89, 0.28);
 }
 
 @media (max-width: 768px) {
-  .outstandings-pagination {
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem;
+  .outstandings-scroll-container .table-footer {
+    padding: 1rem;
   }
 }

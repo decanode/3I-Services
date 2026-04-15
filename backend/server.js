@@ -16,6 +16,7 @@ const ledgerRemainderRoutes = require('./routes/ledgerRemainder');
 const ledgerLogsRoutes = require('./routes/ledgerLogs');
 const adminDashboardRoutes = require('./routes/adminDashboard');
 const seederRoutes = require('./routes/seeder');
+const counterRoutes = require('./routes/counter');
 
 const app = express();
 const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
@@ -52,6 +53,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/excel', excelMasterRoutes);
 app.use('/api/ledger-remainder', ledgerRemainderRoutes);
 app.use('/api/ledger-logs', ledgerLogsRoutes);
+app.use('/api/counter', counterRoutes);
 app.use('/api/admin', adminDashboardRoutes);
 app.use('/api/seed', seederRoutes);
 

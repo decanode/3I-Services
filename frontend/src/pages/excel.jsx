@@ -166,11 +166,6 @@ export default function ExcelPage() {
           title: 'Upload Successful',
           stats: {
             type: 'outstanding',
-            processed: data.processed,
-            updated: data.updated,
-            logsCreated: data.logsCreated,
-            found: Array.isArray(data.found) ? data.found.length : (data.found ?? 0),
-            notFound: Array.isArray(data.notFound) ? data.notFound.length : (data.notFound ?? 0),
             fileName: data.fileName,
           },
           onConfirm: resetAlert,

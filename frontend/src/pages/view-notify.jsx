@@ -5,21 +5,33 @@ import { apiFetch } from '../utils/api';
 import Table from '../components/Table';
 import PageLoader from '../components/loading';
 import Alert from '../components/Alert';
-import { SearchBar } from '../components/Button';
+import { SearchBar, Pagination } from '../components/Button';
 import '../styles/pagestyles/view-notify.css';
 import '../styles/componentstyles/Alert.css';
 
+const PAGE_SIZE = 15;
+
 export default function NotifyPage() {
-  const [ledgers, setLedgers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Cursor stack — last element is the current page's cursor (null = page 1)
+  const [cursorStack, setCursorStack] = useState([null]);
+  const [pageIndex, setPageIndex] = useState(1);
   const [showLoader, setShowLoader] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [ledgers, setLedgers] = useState([]);
+  const [nextCursor, setNextCursor] = useState(null);
   const navigate = useNavigate();
 
-  const fetchLedgerRemainders = useCallback(async () => {
+  const currentCursor = cursorStack[cursorStack.length - 1];
+
+  const fetchLedgerRemainders = useCallback(async (cursor) => {
     try {
-      const res = await apiFetch('/api/ledger-remainder?limit=500');
+      const url = cursor
+        ? `/api/ledger-remainder?limit=${PAGE_SIZE}&cursor=${cursor}`
+        : `/api/ledger-remainder?limit=${PAGE_SIZE}`;
+      
+      const res = await apiFetch(url);
 
       if (!res.ok) {
         throw new Error('Failed to load ledger remainders');
@@ -30,50 +42,82 @@ export default function NotifyPage() {
         (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
       );
       setLedgers(sortedLedgers);
+      setNextCursor(data.nextCursor || null);
       setAlert(null);
     } catch (err) {
       setAlert({
         type: 'error',
         title: 'Load Failed',
         message: err.message || 'Failed to load ledger data',
-        onConfirm: () => { setAlert(null); fetchLedgerRemainders(); },
+        onConfirm: () => { setAlert(null); fetchLedgerRemainders(cursor); },
         onCancel: () => setAlert(null),
       });
       setLedgers([]);
+      setNextCursor(null);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchLedgerRemainders();
-  }, [fetchLedgerRemainders]);
+    fetchLedgerRemainders(currentCursor);
+  }, [currentCursor, fetchLedgerRemainders]);
+
+  const goNext = () => {
+    if (nextCursor == null) return;
+    setCursorStack(prev => [...prev, nextCursor]);
+    setPageIndex(p => p + 1);
+  };
+
+  const goPrev = () => {
+    if (cursorStack.length <= 1) return;
+    setCursorStack(prev => prev.slice(0, -1));
+    setPageIndex(p => p - 1);
+  };
+
+  const formatCurrency = (value) => {
+    if (value == null || value === '') return '—';
+    const num = parseFloat(value);
+    if (isNaN(num)) return '—';
+    return num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  };
+
+  const formatCallDate = (val) => {
+    if (!val) return '—';
+    try {
+      return new Date(val).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+      return val;
+    }
+  };
 
   const columns = useMemo(() => [
     {
       key: 'ledger_name',
       label: 'Ledger Name',
-      width: '300px',
+      width: '280px',
+      align: 'center',
+      render: (item) => <span style={{ color: '#2a4759', fontWeight: 600 }}>{item.ledger_name || '—'}</span>,
+    },
+    {
+      key: 'group',
+      label: 'Group',
+      width: '150px',
       align: 'center',
     },
     {
-      key: 'nextCallDate',
-      label: 'Date',
-      width: '150px',
+      key: 'debit',
+      label: 'Debit',
+      width: '130px',
       align: 'center',
-      render: (value) => {
-        if (!value) return '—';
-        try {
-          const date = new Date(value);
-          return date.toLocaleDateString('en-IN', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          });
-        } catch {
-          return value;
-        }
-      },
+      render: (item) => formatCurrency(item.debit),
+    },
+    {
+      key: 'nextCallDate',
+      label: 'Next Call Date',
+      width: '160px',
+      align: 'center',
+      render: (item) => formatCallDate(item.nextCallDate),
     },
   ], []);
 
@@ -127,22 +171,11 @@ export default function NotifyPage() {
       )}
 
       <div className="notify-header">
-        <div className="notify-header-text">
-          <h1>Ledger Notifications</h1>
-          <p className="notify-subtitle">Recent ledger updates and changes</p>
-        </div>
-        <SearchBar
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by ledger name or date (e.g. Apr, 2026, 26)..."
-          className="notify-search"
-        />
-        <div style={{ position: 'absolute', top: '2rem', right: '2rem', zIndex: 10 }}>  
+        <h1>Ledger Notifications :</h1>
         <button className="page-back-btn" onClick={() => navigate("/home")}>
           <ArrowLeft size={16} />
           Back
         </button>
-        </div>
       </div>
 
       <div className="notify-table-section">
@@ -150,38 +183,43 @@ export default function NotifyPage() {
           <div className="notify-loading">Loading...</div>
         ) : (
           <div className="notify-table-container">
-            <div className="notify-table-wrapper">
-              {filteredLedgers.length === 0 ? (
-                <div className="notify-empty">No ledger updates found</div>
-              ) : (
-                <table className="notify-table">
-                  <thead>
-                    <tr>
-                      {columns.map((col) => (
-                        <th key={col.key} style={{ width: col.width, textAlign: col.align }}>
-                          {col.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredLedgers.map((ledger, index) => (
-                      <tr
-                        key={ledger.id || index}
-                        className="notify-table-row"
-                        onClick={() => handleRowClick(ledger)}
-                      >
-                        {columns.map((col) => (
-                          <td key={col.key} style={{ textAlign: col.align }}>
-                            {col.render ? col.render(ledger[col.key]) : ledger[col.key] || '—'}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="notify-toolbar">
+              <SearchBar
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by ledger name or date..."
+                className="notify-search"
+              />
+              {searchTerm && (
+                <button
+                  className="notify-clear-btn"
+                  onClick={() => setSearchTerm('')}
+                >
+                  Clear
+                </button>
               )}
             </div>
+
+            <Table
+              columns={columns}
+              data={filteredLedgers}
+              noDataMessage="No ledger updates found"
+              striped={true}
+              headerGradient={true}
+              minWidth={800}
+              containerClassName="notify-scroll-container"
+              tableClassName="notify-table"
+              onRowClick={handleRowClick}
+              footer={
+                <Pagination
+                  currentPage={pageIndex}
+                  hasPrev={cursorStack.length > 1}
+                  hasNext={nextCursor != null}
+                  onPrev={goPrev}
+                  onNext={goNext}
+                />
+              }
+            />
           </div>
         )}
       </div>

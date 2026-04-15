@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ArrowUpNarrowWide, ArrowDownNarrowWide, Filter, X, ArrowLeft, FileDown } from 'lucide-react';
 import { apiFetch } from '../utils/api';
-import { Button, SearchBar } from '../components/Button';
+import { Button, Pagination } from '../components/Button';
 import DatePicker from '../components/datepicker';
 import PageLoader from '../components/loading';
 import Alert from '../components/Alert';
@@ -39,11 +39,11 @@ export default function ViewLogPage() {
   const [alert, setAlert] = useState(null);
   
   // Filters
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all'); // all, credit, debit
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortField, setSortField] = useState('timestamp');
+  const [sortDir, setSortDir] = useState('desc');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(20);
@@ -271,14 +271,6 @@ export default function ViewLogPage() {
       result = result.filter(log => log.ldebit > 0);
     }
 
-    if (searchTerm) {
-      const lowerTerm = searchTerm.toLowerCase();
-      result = result.filter(log =>
-        (log.ledger_name && log.ledger_name.toLowerCase().includes(lowerTerm)) ||
-        (log.ledger_id && log.ledger_id.toLowerCase().includes(lowerTerm))
-      );
-    }
-
     // Date filter — only active when dateFrom is set; dateTo defaults to today
     if (dateFrom) {
       const from = new Date(dateFrom);
@@ -291,14 +283,26 @@ export default function ViewLogPage() {
       });
     }
 
-    // Sort by timestamp
-    result.sort((a, b) => {
-      const diff = new Date(b.timestamp) - new Date(a.timestamp);
-      return sortOrder === 'asc' ? -diff : diff;
+    // Sort
+    result = [...result].sort((a, b) => {
+      let diff = 0;
+      if (sortField === 'ledger_name') {
+        diff = String(a.ledger_name ?? '').localeCompare(String(b.ledger_name ?? ''));
+      } else if (sortField === 'nextCallDate') {
+        const aHas = !!a.nextCallDate;
+        const bHas = !!b.nextCallDate;
+        if (!aHas && !bHas) diff = 0;
+        else if (!aHas) diff = 1;
+        else if (!bHas) diff = -1;
+        else diff = new Date(a.nextCallDate) - new Date(b.nextCallDate);
+      } else {
+        diff = new Date(a.timestamp) - new Date(b.timestamp);
+      }
+      return sortDir === 'asc' ? diff : -diff;
     });
 
     return result;
-  }, [logs, searchTerm, filterType, dateFrom, dateTo, sortOrder]);
+  }, [logs, filterType, dateFrom, dateTo, sortField, sortDir]);
 
   const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
   const currentLogs = useMemo(() => {
@@ -336,12 +340,6 @@ export default function ViewLogPage() {
       </div>
 
       <div className="view-log-filters">
-        <SearchBar
-          className="view-log-search"
-          placeholder="Search by ledger name, ID, group, or comments..."
-          value={searchTerm}
-          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-        />
         <div className="view-log-filter-row">
           <div className="view-log-toggles">
             <Button
@@ -391,6 +389,41 @@ export default function ViewLogPage() {
               Excel
             </button>
           </div>
+        </div>
+        <div className="view-log-sort-row">
+          <span className="view-log-sort-label">Sort by:</span>
+          {[
+            { value: 'timestamp', label: 'Date' },
+            { value: 'ledger_name', label: 'Ledger Name' },
+            { value: 'nextCallDate', label: 'Next Call Date' },
+          ].map(({ value, label }) => (
+            <label key={value} className="view-log-sort-radio">
+              <input
+                type="radio"
+                name="sortField"
+                value={value}
+                checked={sortField === value}
+                onChange={() => { setSortField(value); setCurrentPage(1); }}
+              />
+              {label}
+            </label>
+          ))}
+          <span className="view-log-sort-sep" />
+          {[
+            { value: 'asc', label: '↑ Asc' },
+            { value: 'desc', label: '↓ Desc' },
+          ].map(({ value, label }) => (
+            <label key={value} className="view-log-sort-radio">
+              <input
+                type="radio"
+                name="sortDir"
+                value={value}
+                checked={sortDir === value}
+                onChange={() => setSortDir(value)}
+              />
+              {label}
+            </label>
+          ))}
         </div>
       </div>
 
@@ -529,7 +562,7 @@ export default function ViewLogPage() {
                     <th
                       key={col.key}
                       style={{ width: col.width, textAlign: col.align || 'center', cursor: col.sortable ? 'pointer' : 'default', userSelect: col.sortable ? 'none' : 'auto' }}
-                      onClick={col.sortable ? () => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc') : undefined}
+                      onClick={col.sortable ? () => { setSortField('timestamp'); setSortDir(prev => prev === 'desc' ? 'asc' : 'desc'); } : undefined}
                     >
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         {col.label}
@@ -537,11 +570,12 @@ export default function ViewLogPage() {
                           <span style={{
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                             width: '24px', height: '24px', borderRadius: '4px',
-                            backgroundColor: '#f3f4f6', transition: 'background-color 0.2s'
+                            backgroundColor: sortField === 'timestamp' ? '#dbeafe' : '#f3f4f6',
+                            transition: 'background-color 0.2s'
                           }}>
-                            {sortOrder === 'desc'
-                              ? <ArrowDownNarrowWide size={14} color="#4b5563" />
-                              : <ArrowUpNarrowWide size={14} color="#4b5563" />
+                            {sortDir === 'desc'
+                              ? <ArrowDownNarrowWide size={14} color={sortField === 'timestamp' ? '#2563eb' : '#4b5563'} />
+                              : <ArrowUpNarrowWide size={14} color={sortField === 'timestamp' ? '#2563eb' : '#4b5563'} />
                             }
                           </span>
                         )}
@@ -578,27 +612,11 @@ export default function ViewLogPage() {
               </tbody>
             </table>
 
-            {totalPages > 1 && (
-              <div className="log-pagination">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <div className="pagination-info">
-                  Page {currentPage} of {totalPages} ({filteredLogs.length} total)
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>

@@ -1,11 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Users, UserPlus, Clock, Mail, Check, X, Trash2, IdCard, Shield, User as UserIcon, Bell, MapPin } from 'lucide-react';
+import { Users, UserPlus, Clock, Mail, Check, X, Trash2, IdCard, Shield, User as UserIcon, Bell, MapPin, BookMarked, IndianRupee, Database, FileCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
 import Alert from '../components/Alert';
 import PageLoader from '../components/loading';
 import { RemainderCard } from './Remainder';
 import '../styles/pagestyles/home.css';
+
+function formatStatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const today = new Date();
+  const isToday = d.toDateString() === today.toDateString();
+  const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return isToday
+    ? `Today, ${time}`
+    : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + time;
+}
 
 function formatRequestDate(iso) {
   if (!iso) return '—';
@@ -333,6 +344,7 @@ export default function HomePage() {
   const isAdmin = user?.role === 'admin';
   const [isEmployeeCardExpanded, setIsEmployeeCardExpanded] = useState(false);
   const [adminData, setAdminData] = useState(null);
+  const [counterStats, setCounterStats] = useState(null);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const [activeAdminList, setActiveAdminList] = useState('employees');
   const [initialLoading, setInitialLoading] = useState(isAdmin);
@@ -347,6 +359,19 @@ export default function HomePage() {
       setTimeout(() => setActiveAdminList('requests'), 50);
     }
   }, [isEmployeeCardExpanded, activeAdminList]);
+
+  useEffect(() => {
+    const loadCounterStats = async () => {
+      try {
+        const res = await apiFetch('/api/counter');
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) setCounterStats(json.stats);
+      } catch (e) {
+        console.error('Failed to load counter stats:', e);
+      }
+    };
+    loadCounterStats();
+  }, []);
 
   useEffect(() => {
     if (isAdmin) {
@@ -383,6 +408,7 @@ export default function HomePage() {
 
       <UserGreetingBanner
         user={user}
+        stats={counterStats}
         onEmployeeCardClick={() => setIsEmployeeCardExpanded(!isEmployeeCardExpanded)}
         isEmployeeCardExpanded={isEmployeeCardExpanded}
         activeAdminList={activeAdminList}
@@ -405,7 +431,7 @@ export default function HomePage() {
   );
 }
 
-function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded, activeAdminList, pendingRequestCount = 0, onBellClick }) {
+function UserGreetingBanner({ user, stats, onEmployeeCardClick, isEmployeeCardExpanded, activeAdminList, pendingRequestCount = 0, onBellClick }) {
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';
   const role = user?.role || 'Employee';
   const idValue = user?.empId || user?.userId || 'N/A';
@@ -444,44 +470,17 @@ function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded,
 
         {/* Integrated info cards grid */}
         <div className="ub__cards-integrated">
-          <div className="ub__card ub__card--city">
-            <div className="ub__card-icon"><MapPin size={24} /></div>
+          {/* Row 1: Location, Employee ID, Role, Manage Employees */}
+          <div className="ub__card ub__card--location">
+            <div className="ub__card-icon"><MapPin size={28} /></div>
             <div className="ub__card-body">
-              <div className="ub__card-label">{isAdmin ? 'Location' : 'City'}</div>
-              <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
-            </div>
-          </div>
-            <div className="ub__card ub__card--city">
-            <div className="ub__card-icon"><MapPin size={24} /></div>
-            <div className="ub__card-body">
-              <div className="ub__card-label">{isAdmin ? 'Location' : 'City'}</div>
-              <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
-            </div>
-          </div>
-            <div className="ub__card ub__card--city">
-            <div className="ub__card-icon"><MapPin size={24} /></div>
-            <div className="ub__card-body">
-              <div className="ub__card-label">{isAdmin ? 'Location' : 'City'}</div>
-              <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
-            </div>
-          </div>
-            <div className="ub__card ub__card--city">
-            <div className="ub__card-icon"><MapPin size={24} /></div>
-            <div className="ub__card-body">
-              <div className="ub__card-label">{isAdmin ? 'Location' : 'City'}</div>
-              <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
-            </div>
-          </div>
-            <div className="ub__card ub__card--city">
-            <div className="ub__card-icon"><MapPin size={24} /></div>
-            <div className="ub__card-body">
-              <div className="ub__card-label">{isAdmin ? 'Location' : 'City'}</div>
+              <div className="ub__card-label">Location</div>
               <div className="ub__card-value">{isAdmin ? 'All' : city}</div>
             </div>
           </div>
 
-          <div className="ub__card ub__card--id">
-            <div className="ub__card-icon"><IdCard size={24} /></div>
+          <div className="ub__card ub__card--emp-id">
+            <div className="ub__card-icon"><IdCard size={28} /></div>
             <div className="ub__card-body">
               <div className="ub__card-label">Employee ID</div>
               <div className="ub__card-value">{idValue}</div>
@@ -489,14 +488,12 @@ function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded,
           </div>
 
           <div className="ub__card ub__card--role">
-            <div className="ub__card-icon"><Shield size={24} /></div>
+            <div className="ub__card-icon"><Shield size={28} /></div>
             <div className="ub__card-body">
               <div className="ub__card-label">Role</div>
               <div className="ub__card-value" style={{ textTransform: 'capitalize' }}>{role}</div>
             </div>
-            
           </div>
-          
 
           {isAdmin && (
             <div
@@ -506,13 +503,52 @@ function UserGreetingBanner({ user, onEmployeeCardClick, isEmployeeCardExpanded,
               tabIndex={0}
               onKeyPress={(e) => e.key === 'Enter' && onEmployeeCardClick()}
             >
-              <div className="ub__card-icon"><Users size={24} /></div>
+              <div className="ub__card-icon"><Users size={28} /></div>
               <div className="ub__card-body">
                 <div className="ub__card-label">Manage</div>
                 <div className="ub__card-value">Employees</div>
               </div>
             </div>
           )}
+
+          {/* Row 2: Analytics cards with mock data */}
+          <div className="ub__card ub__card--ledgers">
+            <div className="ub__card-icon"><Database size={28} /></div>
+            <div className="ub__card-body">
+              <div className="ub__card-label">No of Ledgers</div>
+              <div className="ub__card-value">{stats?.totalLedgers ?? '—'}</div>
+            </div>
+          </div>
+
+          <div className="ub__card ub__card--outstandings">
+            <div className="ub__card-icon"><IndianRupee size={28} /></div>
+            <div className="ub__card-body">
+              <div className="ub__card-label">Total Outstandings</div>
+              <div className="ub__card-value">
+                {stats?.totaldebit != null
+                  ? `₹ ${Number(stats.totaldebit).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+                  : '—'}
+              </div>
+            </div>
+          </div>
+
+          <div className="ub__card ub__card--master-upload">
+            <div className="ub__card-icon"><FileCheck size={28} /></div>
+            <div className="ub__card-body">
+              <div className="ub__card-label">Last Master Uploaded</div>
+              <div className="ub__card-value-small">{stats?.src_master ?? 'Not uploaded'}</div>
+              <div className="ub__card-timestamp">{formatStatDate(stats?.src_master_date)}</div>
+            </div>
+          </div>
+
+          <div className="ub__card ub__card--outstanding-upload">
+            <div className="ub__card-icon"><BookMarked size={28} /></div>
+            <div className="ub__card-body">
+              <div className="ub__card-label">Last Outstanding Uploaded</div>
+              <div className="ub__card-value-small">{stats?.src_outstanding ?? 'Not uploaded'}</div>
+              <div className="ub__card-timestamp">{formatStatDate(stats?.src_outstanding_date)}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

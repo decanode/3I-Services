@@ -9,7 +9,7 @@ const ExcelJS = require('exceljs');
 exports.listPaged = async (req, res) => {
   try {
     const cityFilter = req.user.role === 'admin' ? null : (req.user.city || null);
-    const after = req.query.after != null ? parseInt(req.query.after, 10) : undefined;
+    const after = req.query.after != null ? String(req.query.after) : undefined;
     const result = await ledgerLogsService.listPaged({ after, city: cityFilter });
     res.json({ count: result.rows.length, rows: result.rows, nextCursor: result.nextCursor });
   } catch (error) {

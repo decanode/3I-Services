@@ -8,3 +8,4 @@ dist
 package-lock.json
 frontend/public/cards/
 frontend/src/dev/
+firestore.indexes.json

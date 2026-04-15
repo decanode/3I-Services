@@ -167,7 +167,6 @@ const DatePicker = ({ value, onChange, required = false, disabled = false, varia
         }}
         style={isSignup ? { paddingLeft: 0, paddingRight: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' } : {}}
       >
-        {!isSignup && <Calendar size={20} className="form-input-icon" />}
         <div className="date-field-input" style={isSignup ? { paddingLeft: 0, paddingRight: 0 } : {}}>
           {selectedDate ? (
             <span className={`date-segment ${isSignup ? '!text-white' : ''}`}>{formatDate(selectedDate)}</span>

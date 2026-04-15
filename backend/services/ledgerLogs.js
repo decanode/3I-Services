@@ -1,6 +1,5 @@
 const { db } = require('../config/firebase');
 const { LEDGER_LOGS_COLLECTION_NAME, createLedgerLogEntry } = require('../models/ledgerLogs');
-const counterService = require('./counterService');
 
 const BATCH_MAX = 400;
 
@@ -15,9 +14,8 @@ class LedgerLogsService {
   async addLog(logData) {
     try {
       const logEntry = createLedgerLogEntry(logData);
-      const { firstId } = await counterService.reserveLogIds(1);
-      const ref = this.collection.doc(`LL${firstId}`);
-      await ref.set({ ...logEntry, sequence_id: firstId });
+      const ref = this.collection.doc();
+      await ref.set(logEntry);
       return { success: true, id: ref.id };
     } catch (error) {
       console.error('Error adding ledger log:', error);
@@ -33,17 +31,15 @@ class LedgerLogsService {
   async addLogs(logs) {
     if (!logs.length) return { inserted: 0 };
 
-    const { firstId } = await counterService.reserveLogIds(logs.length);
     let inserted = 0;
 
     for (let i = 0; i < logs.length; i += BATCH_MAX) {
       const batch = db.batch();
       const chunk = logs.slice(i, i + BATCH_MAX);
-      for (let j = 0; j < chunk.length; j++) {
-        const n = firstId + (i + j);
-        const logEntry = createLedgerLogEntry(chunk[j]);
-        const ref = this.collection.doc(`LL${n}`);
-        batch.set(ref, { ...logEntry, sequence_id: n });
+      for (const logData of chunk) {
+        const logEntry = createLedgerLogEntry(logData);
+        const ref = this.collection.doc();
+        batch.set(ref, logEntry);
         inserted += 1;
       }
       await batch.commit();
@@ -126,18 +122,17 @@ class LedgerLogsService {
   async listPaged(opts = {}) {
     const city = opts.city ? String(opts.city).trim().toLowerCase() : null;
     let query = city
-      ? this.collection.where('city', '==', city).orderBy('sequence_id', 'desc').limit(15)
-      : this.collection.orderBy('sequence_id', 'desc').limit(15);
+      ? this.collection.where('city', '==', city).orderBy('timestamp', 'desc').limit(15)
+      : this.collection.orderBy('timestamp', 'desc').limit(15);
     if (opts.after != null) {
-      const after = parseInt(String(opts.after), 10);
-      if (!Number.isNaN(after)) query = query.startAfter(after);
+      query = query.startAfter(String(opts.after));
     }
     const snapshot = await query.get();
     const rows = [];
     snapshot.forEach(doc => rows.push({ id: doc.id, ...doc.data() }));
     return {
       rows,
-      nextCursor: rows.length === 15 ? rows[rows.length - 1].sequence_id : null,
+      nextCursor: rows.length === 15 ? rows[rows.length - 1].timestamp : null,
     };
   }
 

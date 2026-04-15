@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { User, Landmark, TrendingDown, TrendingUp, Calendar, MessageSquare, Phone, Mail, Pencil, Trash2 } from 'lucide-react';
+import { User, Landmark, TrendingDown, TrendingUp, Calendar, MessageSquare, Phone, Mail, Pencil, Trash2, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import DatePicker from '../components/datepicker';
 import { SaveButton, CancelButton, AddCustomerButton, BackButton } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
@@ -20,16 +20,14 @@ export default function NotifyDetailPage() {
   const [additionalCustomers, setAdditionalCustomers] = useState([]);
   const [editableDate, setEditableDate] = useState('');
   const [editableComments, setEditableComments] = useState('');
+  const [isCommentsExpanded, setIsCommentsExpanded] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
-  const [isEditingComment, setIsEditingComment] = useState(false);
-  const [showAllComments, setShowAllComments] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [ledgerDataLoading, setLedgerDataLoading] = useState(true);
   const [showLoader, setShowLoader] = useState(true);
   const [alert, setAlert] = useState(null);
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', mobile: '', email: '' });
-  const [hasCustomerChanges, setHasCustomerChanges] = useState(false);
   const [editingCustomerIndex, setEditingCustomerIndex] = useState(null);
   const [editingCustomerData, setEditingCustomerData] = useState({ name: '', mobile: '', email: '' });
 
@@ -48,7 +46,7 @@ export default function NotifyDetailPage() {
         if (record) {
           setLedgerData(record);
           setEditableDate(record.nextCallDate || '');
-          setEditableComments(record.lastComments || '');
+          setEditableComments('');
           const additionals = [];
           for (let i = 1; i <= 3; i++) {
             const cname = record[`cname${i}`];
@@ -75,22 +73,17 @@ export default function NotifyDetailPage() {
   useEffect(() => {
     const fetchBankData = async () => {
       if (!ledgerData?.ledger_id) return;
-
       try {
         const response = await apiFetch(`/api/excel/master/${encodeURIComponent(ledgerData.ledger_id)}`);
-        if (!response.ok) return; // Silently fail — bank info is supplemental
+        if (!response.ok) return;
         const json = await response.json();
-        if (json?.data) {
-          setBankData(json.data);
-        }
+        if (json?.data) setBankData(json.data);
       } catch (error) {
         console.error('Error fetching bank data:', error);
       }
     };
-
     fetchBankData();
   }, [ledgerData?.ledger_id]);
-
 
   const formatCurrency = (value) => {
     if (value == null || value === 0 || value === '0') return '—';
@@ -103,11 +96,7 @@ export default function NotifyDetailPage() {
     if (!dateString) return '—';
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-IN', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
+      return date.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
     } catch {
       return dateString;
     }
@@ -146,7 +135,6 @@ export default function NotifyDetailPage() {
     setAdditionalCustomers(updatedCustomers);
     setIsAddingCustomer(false);
     setNewCustomer({ name: '', mobile: '', email: '' });
-    // Immediately save to DB with the updated customers list
     await handleSave(updatedCustomers);
   };
 
@@ -192,17 +180,13 @@ export default function NotifyDetailPage() {
   };
 
   const handleDeleteCustomer = async (index) => {
-    // Map display index to original Firestore slot number (1-3)
     const ledger = ledgerData;
     let matchCount = 0;
     let slot = null;
     for (let i = 1; i <= 3; i++) {
       const hasData = !!(ledger?.[`cname${i}`] || ledger?.[`cmob${i}`] || ledger?.[`cemail${i}`]);
       if (hasData) {
-        if (matchCount === index) {
-          slot = i;
-          break;
-        }
+        if (matchCount === index) { slot = i; break; }
         matchCount++;
       }
     }
@@ -225,10 +209,9 @@ export default function NotifyDetailPage() {
         throw new Error(err.message || 'Failed to delete customer');
       }
 
-      // Re-derive additionalCustomers from ledgerData after nulling the slot
       const updatedLedgerData = { ...ledgerData };
-      updatedLedgerData[`cname${slot}`]  = null;
-      updatedLedgerData[`cmob${slot}`]   = null;
+      updatedLedgerData[`cname${slot}`] = null;
+      updatedLedgerData[`cmob${slot}`] = null;
       updatedLedgerData[`cemail${slot}`] = null;
       setLedgerData(updatedLedgerData);
 
@@ -255,28 +238,23 @@ export default function NotifyDetailPage() {
 
       const customers = customersOverride ?? additionalCustomers;
 
-      // Build update body with main fields and additional customers
       const updateBody = {
         nextCallDate: editableDate || null,
-        lastComments: editableComments || null,
+        lastComments: editableComments.trim() || null,
       };
 
-      // Add additional customers (cname1, cmob1, cemail1, etc.) - always send all 3 slots
       for (let i = 1; i <= 3; i++) {
         const customer = customers[i - 1];
         if (customer) {
-          updateBody[`cname${i}`] = customer.name && customer.name.trim() ? customer.name.trim() : null;
-          updateBody[`cmob${i}`] = customer.mobile && customer.mobile.trim() ? customer.mobile.trim() : null;
-          updateBody[`cemail${i}`] = customer.email && customer.email.trim() ? customer.email.trim() : null;
+          updateBody[`cname${i}`] = customer.name?.trim() || null;
+          updateBody[`cmob${i}`] = customer.mobile?.trim() || null;
+          updateBody[`cemail${i}`] = customer.email?.trim() || null;
         } else {
-          // Explicitly set to null if no customer at this index
           updateBody[`cname${i}`] = null;
           updateBody[`cmob${i}`] = null;
           updateBody[`cemail${i}`] = null;
         }
       }
-
-      console.log('handleSave - complete updateBody:', updateBody);
 
       const response = await apiFetch(`/api/ledger-remainder/${encodeURIComponent(ledgerData.ledger_id)}`, {
         method: 'PUT',
@@ -284,92 +262,50 @@ export default function NotifyDetailPage() {
         body: JSON.stringify(updateBody),
       });
 
-      console.log('handleSave - response status:', response.status);
-
-      // Check if response is ok first
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('handleSave - error response:', errorText);
-        let errorMessage = 'Failed to save';
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-          // If error response is not JSON, use generic message
-          errorMessage = `Server error (${response.status})`;
-        }
+        let errorMessage = `Server error (${response.status})`;
+        try { errorMessage = JSON.parse(errorText).error || errorMessage; } catch { /* ignore */ }
         throw new Error(errorMessage);
       }
 
-      // Parse successful response
-      let data;
       const responseText = await response.text();
-      console.log('handleSave - response text:', responseText);
+      if (!responseText) throw new Error('Empty response from server');
 
-      if (!responseText) {
-        throw new Error('Empty response from server');
-      }
-
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('handleSave - JSON parse error:', parseError);
+      let data;
+      try { data = JSON.parse(responseText); } catch {
         throw new Error('Invalid response format from server');
       }
 
-      console.log('handleSave - response data:', data);
-
-      // Update local ledger data with the saved values
+      // Update local state from saved data
       const updatedLedgerData = {
         ...ledgerData,
         nextCallDate: editableDate || null,
-        lastComments: editableComments || null,
+        lastComments: data?.data?.lastComments ?? ledgerData.lastComments,
       };
 
-      // Also update customer data in local state
       for (let i = 1; i <= 3; i++) {
-        const cnameKey = `cname${i}`;
-        const cmobKey = `cmob${i}`;
-        const cemailKey = `cemail${i}`;
         const customer = customers[i - 1];
-
-        if (customer) {
-          updatedLedgerData[cnameKey] = customer.name || null;
-          updatedLedgerData[cmobKey] = customer.mobile || null;
-          updatedLedgerData[cemailKey] = customer.email || null;
-        } else {
-          updatedLedgerData[cnameKey] = null;
-          updatedLedgerData[cmobKey] = null;
-          updatedLedgerData[cemailKey] = null;
-        }
+        updatedLedgerData[`cname${i}`] = customer?.name || null;
+        updatedLedgerData[`cmob${i}`] = customer?.mobile || null;
+        updatedLedgerData[`cemail${i}`] = customer?.email || null;
       }
 
       setLedgerData(updatedLedgerData);
 
-      // Re-derive additionalCustomers from saved data to keep UI in sync with DB
       const savedAdditionals = [];
       for (let i = 1; i <= 3; i++) {
         const cname = updatedLedgerData[`cname${i}`];
         const mob = updatedLedgerData[`cmob${i}`];
         const cemail = updatedLedgerData[`cemail${i}`];
-        if (cname || mob || cemail) {
-          savedAdditionals.push({ name: cname || '', mobile: mob || '', email: cemail || '' });
-        }
+        if (cname || mob || cemail) savedAdditionals.push({ name: cname || '', mobile: mob || '', email: cemail || '' });
       }
       setAdditionalCustomers(savedAdditionals);
 
-      const customerCount = savedAdditionals.filter(c => c.name || c.mobile).length;
-      const successMsg = customerCount > 0
-        ? `Updated successfully with ${customerCount} additional customer(s)!`
-        : 'Updated successfully!';
-
-      setAlert({ type: 'success', title: 'Saved!', message: successMsg });
-      setHasCustomerChanges(false);
+      setEditableComments('');
       setIsEditingDate(false);
-      setIsEditingComment(false);
-      setShowAllComments(false);
+      setAlert({ type: 'success', title: 'Saved!', message: 'Updated successfully.' });
     } catch (error) {
-      console.error('handleSave - error:', error);
       setAlert({ type: 'error', title: 'Save Failed', message: error.message || 'Failed to save' });
     } finally {
       setIsLoading(false);
@@ -388,12 +324,12 @@ export default function NotifyDetailPage() {
       )}
 
       <div className="ledger-card">
-        {/* Header: title + group badge + bank summary cards + back button */}
+        {/* Header */}
         <div className="ledger-header-wrapper">
           <div className="ledger-title-wrapper">
             <User className="ledger-icon" size={24} />
             <h2>{ledgerData ? ledgerData.ledger_name : 'No ledger selected'}</h2>
-            {ledgerData && ledgerData.group && (
+            {ledgerData?.group && (
               <span className="ledger-group-badge">{ledgerData.group}</span>
             )}
           </div>
@@ -406,14 +342,12 @@ export default function NotifyDetailPage() {
                   <div className="bank-name">{bankData?.bank || ledgerData.bank || '—'}</div>
                 </div>
               </div>
-
               <div className="summary-card summary-card--purple">
                 <Landmark className="summary-card-icon" size={20} />
                 <div className="summary-card-content">
                   <div className="bank-address">{bankData?.bankadd1 || ledgerData.bankadd1 || '—'}</div>
                 </div>
               </div>
-
               <div className="summary-card summary-card--orange">
                 <Landmark className="summary-card-icon" size={20} />
                 <div className="summary-card-content">
@@ -423,462 +357,382 @@ export default function NotifyDetailPage() {
             </div>
           )}
 
-          <BackButton
-            onClick={() => navigate(-1)}
-            title="Go Back"
-            size="medium"
-            showLabel={true}
-          />
+          <BackButton onClick={() => navigate(-1)} title="Go Back" size="medium" showLabel={true} />
         </div>
 
         {alert && (
           <Alert
-              type={alert.type}
-              title={alert.title}
-              message={alert.message}
-              onConfirm={() => setAlert(null)}
-              onCancel={() => setAlert(null)}
-            />
-          )}
+            type={alert.type}
+            title={alert.title}
+            message={alert.message}
+            onConfirm={() => setAlert(null)}
+            onCancel={() => setAlert(null)}
+          />
+        )}
 
-          {ledgerData && (<>
-            <div className="main-content-wrapper">
-              {/* Left Column: Outstanding Details */}
-              <div className="left-column">
-                <div className="outstandings-section">
-                  <h3 className="outstandings-heading">Outstanding Details</h3>
-                  <div className="outstandings-cards">
-                    <div className="amount-card debit-card">
-                      <div className="amount-header">
-                        <span className="amount-title">Debit</span>
-                        <TrendingDown className="amount-icon" size={24} />
-                      </div>
-                      <div className="amount-value">
-                        {formatCurrency(ledgerData.debit)}
-                      </div>
-                    </div>
+        {ledgerData && (<>
+          {/* ── Outstanding Details: compact horizontal row ── */}
+          <div className="outstandings-row">
+            <h3 className="outstandings-heading">Outstanding Details</h3>
+            <div className="outstandings-cards">
+              <div className="amount-card debit-card">
+                <div className="amount-header">
+                  <span className="amount-title">Debit</span>
+                  <TrendingDown className="amount-icon" size={22} />
+                </div>
+                <div className="amount-value">{formatCurrency(ledgerData.debit)}</div>
+              </div>
+              <div className="amount-card credit-card">
+                <div className="amount-header">
+                  <span className="amount-title">Credit</span>
+                  <TrendingUp className="amount-icon" size={22} />
+                </div>
+                <div className="amount-value">{formatCurrency(ledgerData.credit)}</div>
+              </div>
+            </div>
+          </div>
 
-                    <div className="amount-card credit-card">
-                      <div className="amount-header">
-                        <span className="amount-title">Credit</span>
-                        <TrendingUp className="amount-icon" size={24} />
-                      </div>
-                      <div className="amount-value">
-                        {formatCurrency(ledgerData.credit)}
-                      </div>
-                    </div>
+          {/* ── Interaction Details: full width ── */}
+          <div className="interaction-section">
+            <div className="interaction-heading-wrapper">
+              <h3 className="interaction-heading">Interaction Details</h3>
+            </div>
+
+            <div className="interaction-combined-card">
+              {/* Date strip */}
+              {!isEditingDate ? (
+                <div
+                  className="interaction-date-section"
+                  onClick={() => setIsEditingDate(true)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setIsEditingDate(true)}
+                >
+                  <div className="interaction-date-label">
+                    <Calendar size={15} />
+                    <span className="detail-title">Next Call Date</span>
+                    <span className="interaction-date-hint">Click to edit</span>
+                  </div>
+                  <div className="interaction-date-value">
+                    {editableDate ? formatDate(editableDate) : '— Not set —'}
                   </div>
                 </div>
-              </div>
-
-              {/* Right: Interaction Details (3/5) */}
-              <div className="right-column">
-                <div className="interaction-section">
-                  <div className="interaction-heading-wrapper">
-                    <h3 className="interaction-heading">Interaction Details</h3>
+              ) : (
+                <div className="interaction-date-section interaction-date-section--editing">
+                  <div className="interaction-date-label">
+                    <Calendar size={15} />
+                    <span className="detail-title">Next Call Date</span>
                   </div>
+                  <div className="date-edit-controls">
+                    <div className="interaction-datepicker-wrapper">
+                      <DatePicker value={editableDate} onChange={setEditableDate} flow="currentMonth" />
+                    </div>
+                    <button
+                      className="date-action-btn date-action-btn--save"
+                      onClick={handleSave}
+                      disabled={isLoading}
+                      title="Save date"
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button
+                      className="date-action-btn date-action-btn--cancel"
+                      onClick={() => { setIsEditingDate(false); setEditableDate(ledgerData?.nextCallDate || ''); }}
+                      disabled={isLoading}
+                      title="Cancel"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
 
-                  <div className="interaction-combined-card">
-                    {/* ── Date strip at top ── */}
-                    {!isEditingDate ? (
-                      <div
-                        className="interaction-date-section"
-                        onClick={() => setIsEditingDate(true)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => e.key === 'Enter' && setIsEditingDate(true)}
-                      >
-                        <div className="interaction-date-label">
-                          <Calendar size={14} />
-                          <span className="detail-title">Next Call Date</span>
-                        </div>
-                        <div className="interaction-date-value">
-                          {editableDate ? formatDate(editableDate) : '—'}
-                        </div>
-                      </div>
+              {/* Comments body */}
+              <div className="comments-cards-section">
+                <div className="comments-section-header">
+                  <div className="comments-section-title">
+                    <MessageSquare size={16} />
+                    <span>Interaction Comments</span>
+                  </div>
+                  <button
+                    className="comments-expand-btn"
+                    onClick={() => setIsCommentsExpanded((prev) => !prev)}
+                    title={isCommentsExpanded ? "Show less history" : "Show full history"}
+                  >
+                    {isCommentsExpanded ? (
+                      <><ChevronUp size={16} /> <span>Collapse</span></>
                     ) : (
-                      <div className="interaction-date-section interaction-date-section--editing">
-                        <div className="interaction-date-label">
-                          <Calendar size={14} />
-                          <span className="detail-title">Next Call Date</span>
-                        </div>
-                        <div className="interaction-datepicker-wrapper">
-                          <DatePicker
-                            value={editableDate}
-                            onChange={setEditableDate}
-                            flow="currentMonth"
-                          />
-                        </div>
-                      </div>
+                      <><ChevronDown size={16} /> <span>Expand</span></>
                     )}
+                  </button>
+                </div>
 
-                    {/* ── Comments body ── */}
-                    {!isEditingComment ? (
-                      <div
-                        className="interaction-comments-section"
-                        onClick={() => {
-                          setIsEditingComment(true);
-                          setEditableComments('');
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => e.key === 'Enter' && setIsEditingComment(true)}
-                      >
-                        <div className="interaction-comments-label">
-                          <MessageSquare size={14} />
-                          <span className="detail-title">Last Comments</span>
-                        </div>
-                        {Array.isArray(ledgerData?.lastComments) && ledgerData.lastComments.length > 0 ? (
-                          <div className="comments-display">
-                            {showAllComments ? (
-                              <div className="comments-scroll">
-                                {ledgerData.lastComments.map((comment, idx) => (
-                                  <div key={idx} className="comment-entry">
-                                    <div className="comment-text">{comment.text}</div>
-                                    <div className="comment-date">
-                                      {new Date(comment.date).toLocaleDateString('en-IN', {
-                                        year: 'numeric',
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="comment-entry">
-                                <div className="comment-text">
-                                  {ledgerData.lastComments[ledgerData.lastComments.length - 1]?.text}
-                                </div>
-                                <div className="comment-date">
-                                  {new Date(
-                                    ledgerData.lastComments[ledgerData.lastComments.length - 1]?.date
-                                  ).toLocaleDateString('en-IN', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                            {ledgerData.lastComments.length > 1 && (
-                              <button
-                                className="show-all-comments-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setShowAllComments(!showAllComments);
-                                }}
-                              >
-                                {showAllComments ? 'Hide All' : `Show All (${ledgerData.lastComments.length})`}
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="comment-text">—</div>
-                        )}
+                {/* Table + Add Comment side-by-side */}
+                <div className={`comments-main-area ${isCommentsExpanded ? 'expanded' : 'collapsed'}`}>
+                  {/* Left: comments table */}
+                  <div className="comments-table-col">
+                    {Array.isArray(ledgerData?.lastComments) && ledgerData.lastComments.length > 0 ? (
+                      <div className="comments-table-wrapper">
+                        <table className="comments-table">
+                          <thead>
+                            <tr>
+                              <th className="col-comment">Comment</th>
+                              <th className="col-time">Date &amp; Time</th>
+                              <th className="col-user">User</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {ledgerData.lastComments
+                              .slice()
+                              .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+                              .map((comment, idx) => {
+                                const d = new Date(comment.date || Date.now());
+                                return (
+                                  <tr key={idx}>
+                                    <td className="col-comment-cell">{comment.text || '—'}</td>
+                                    <td className="col-time-cell">
+                                      {d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                      {' '}
+                                      {d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                    </td>
+                                    <td className="col-user-cell">{comment.userId || '—'}</td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
                       </div>
                     ) : (
-                      <div className="interaction-comments-section interaction-comments-section--editing">
-                        <div className="interaction-comments-label">
-                          <MessageSquare size={14} />
-                          <span className="detail-title">Add New Comment</span>
-                        </div>
-                        <textarea
-                          value={editableComments}
-                          onChange={(e) => setEditableComments(e.target.value)}
-                          placeholder="Enter new comment here..."
-                          className="comment-textarea"
-                          autoFocus
-                        />
-                        {Array.isArray(ledgerData?.lastComments) && ledgerData.lastComments.length > 0 && (
-                          <div className="previous-comments">
-                            <div className="previous-comments-label">Previous Comments:</div>
-                            <div className="comments-scroll">
-                              {ledgerData.lastComments.map((comment, idx) => (
-                                <div key={idx} className="comment-entry">
-                                  <div className="comment-text">{comment.text}</div>
-                                  <div className="comment-date">
-                                    {new Date(comment.date).toLocaleDateString('en-IN', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                      <div className="no-comments-placeholder">
+                        <MessageSquare size={26} />
+                        <p>No comments yet</p>
                       </div>
                     )}
                   </div>
 
-                  {(isEditingComment || isEditingDate) && (
-                    <div className="interaction-edit-actions-bar">
+                  {/* Right: add comment */}
+                  <div className="add-comment-card">
+                    <div className="add-comment-header">
+                      <span className="add-comment-title">Add Comment</span>
                       <SaveButton
                         onClick={handleSave}
-                        disabled={isLoading}
-                        size="medium"
-                        title="Save changes"
-                        showLabel={true}
-                      />
-                      <CancelButton
-                        onClick={() => {
-                          setIsEditingDate(false);
-                          setIsEditingComment(false);
-                          setShowAllComments(false);
-                          setEditableDate(ledgerData?.nextCallDate || '');
-                          setEditableComments(ledgerData?.lastComments || '');
-                        }}
-                        disabled={isLoading}
-                        size="medium"
-                        title="Cancel editing"
+                        disabled={isLoading || !editableComments.trim()}
+                        size="small"
+                        title="Save comment"
                         showLabel={true}
                       />
                     </div>
-                  )}
+                    <textarea
+                      value={editableComments}
+                      onChange={(e) => setEditableComments(e.target.value)}
+                      onFocus={() => setIsCommentsExpanded(true)}
+                      placeholder="Type your comment here..."
+                      className="comment-textarea"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="primary-customer-section">
-              <h4 className="customer-details-heading">Customer Details</h4>
+          {/* Primary Customer */}
+          <div className="primary-customer-section">
+            <h4 className="customer-details-heading">Customer Details</h4>
+            <div className="customer-details-row">
+              <div className="detail-card customer-detail-name-card">
+                <div className="detail-header">
+                  <span className="detail-title">Customer Name</span>
+                  <User className="detail-icon" size={20} />
+                </div>
+                <div className="detail-value">{ledgerData.contact || '—'}</div>
+              </div>
+              <div className="detail-card customer-detail-phone-card">
+                <div className="detail-header">
+                  <span className="detail-title">Mobile</span>
+                  <Phone className="detail-icon" size={20} />
+                </div>
+                <div className="detail-value">{ledgerData.mobile || '—'}</div>
+              </div>
+              <div className="detail-card customer-detail-email-card">
+                <div className="detail-header">
+                  <span className="detail-title">Email</span>
+                  <Mail className="detail-icon" size={20} />
+                </div>
+                <div className="detail-value">{ledgerData.email || '—'}</div>
+              </div>
+            </div>
+          </div>
+        </>)}
+
+        {/* Additional Contacts */}
+        <div>
+          {ledgerData && additionalCustomers.length > 0 && (
+            <>
+              <h4 className="customer-details-heading">Additional Contacts</h4>
+              {additionalCustomers.map((customer, index) => (
+                <div key={index}>
+                  {editingCustomerIndex === index ? (
+                    <>
+                      <div className="customer-row-wrapper">
+                        {isAdmin && (
+                          <div className="customer-row-side-actions">
+                            <button className="customer-action-btn customer-action-btn--edit" disabled={isLoading} title="Cancel editing" onClick={handleCancelEditCustomer}>
+                              <Pencil size={16} />
+                            </button>
+                          </div>
+                        )}
+                        <div className="customer-details-row">
+                          <div className="detail-card customer-detail-name-card">
+                            <div className="detail-header">
+                              <span className="detail-title">Customer Name</span>
+                              <User className="detail-icon" size={20} />
+                            </div>
+                            <input
+                              type="text"
+                              value={editingCustomerData.name}
+                              onChange={(e) => setEditingCustomerData({ ...editingCustomerData, name: e.target.value })}
+                              placeholder="Enter name"
+                              className="customer-input"
+                              autoFocus
+                            />
+                          </div>
+                          <div className="detail-card customer-detail-phone-card">
+                            <div className="detail-header">
+                              <span className="detail-title">Mobile</span>
+                              <Phone className="detail-icon" size={20} />
+                            </div>
+                            <input
+                              type="text"
+                              value={editingCustomerData.mobile}
+                              onChange={(e) => setEditingCustomerData({ ...editingCustomerData, mobile: e.target.value })}
+                              placeholder="Enter mobile"
+                              className="customer-input"
+                            />
+                          </div>
+                          <div className="detail-card customer-detail-email-card">
+                            <div className="detail-header">
+                              <span className="detail-title">Email</span>
+                              <Mail className="detail-icon" size={20} />
+                            </div>
+                            <input
+                              type="email"
+                              value={editingCustomerData.email}
+                              onChange={(e) => setEditingCustomerData({ ...editingCustomerData, email: e.target.value })}
+                              placeholder="Enter email (optional)"
+                              className="customer-input"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="form-action-buttons-center">
+                        <SaveButton onClick={handleSaveEditedCustomer} disabled={isLoading} size="medium" title="Save customer" showLabel={true} />
+                        <CancelButton onClick={handleCancelEditCustomer} disabled={isLoading} size="medium" title="Cancel" showLabel={true} />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="customer-row-wrapper">
+                      {isAdmin && (
+                        <div className="customer-row-side-actions">
+                          <button className="customer-action-btn customer-action-btn--edit" onClick={() => handleEditCustomer(index)} disabled={isLoading} title="Edit customer">
+                            <Pencil size={16} />
+                          </button>
+                          <button className="customer-action-btn customer-action-btn--delete" onClick={() => handleDeleteCustomer(index)} disabled={isLoading} title="Delete customer">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
+                      <div className="customer-details-row">
+                        <div className="detail-card customer-detail-name-card">
+                          <div className="detail-header">
+                            <span className="detail-title">Customer Name</span>
+                            <User className="detail-icon" size={20} />
+                          </div>
+                          <div className="detail-value">{customer.name || '—'}</div>
+                        </div>
+                        <div className="detail-card customer-detail-phone-card">
+                          <div className="detail-header">
+                            <span className="detail-title">Mobile</span>
+                            <Phone className="detail-icon" size={20} />
+                          </div>
+                          <div className="detail-value">{customer.mobile || '—'}</div>
+                        </div>
+                        <div className="detail-card customer-detail-email-card">
+                          <div className="detail-header">
+                            <span className="detail-title">Email</span>
+                            <Mail className="detail-icon" size={20} />
+                          </div>
+                          <div className="detail-value">{customer.email || '—'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+
+          {isAddingCustomer ? (
+            <>
               <div className="customer-details-row">
                 <div className="detail-card customer-detail-name-card">
                   <div className="detail-header">
                     <span className="detail-title">Customer Name</span>
                     <User className="detail-icon" size={20} />
                   </div>
-                  <div className="detail-value">
-                    {ledgerData.contact || '—'}
-                  </div>
+                  <input
+                    type="text"
+                    value={newCustomer.name}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                    placeholder="Enter name"
+                    className="customer-input"
+                    autoFocus
+                  />
                 </div>
-
                 <div className="detail-card customer-detail-phone-card">
                   <div className="detail-header">
                     <span className="detail-title">Mobile</span>
                     <Phone className="detail-icon" size={20} />
                   </div>
-                  <div className="detail-value">
-                    {ledgerData.mobile || '—'}
-                  </div>
+                  <input
+                    type="text"
+                    value={newCustomer.mobile}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, mobile: e.target.value })}
+                    placeholder="Enter mobile"
+                    className="customer-input"
+                  />
                 </div>
-
                 <div className="detail-card customer-detail-email-card">
                   <div className="detail-header">
                     <span className="detail-title">Email</span>
                     <Mail className="detail-icon" size={20} />
                   </div>
-                  <div className="detail-value">
-                    {ledgerData.email || '—'}
-                  </div>
+                  <input
+                    type="email"
+                    value={newCustomer.email}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                    placeholder="Enter email (optional)"
+                    className="customer-input"
+                  />
                 </div>
               </div>
-            </div>
-          </>)}
-
-          <div>
-              {ledgerData && additionalCustomers.length > 0 && (
-                <>
-                  <h4 className="customer-details-heading">Additional Contacts</h4>
-                  {additionalCustomers.map((customer, index) => (
-                    <div key={index}>
-                      {editingCustomerIndex === index ? (
-                        <>
-                          <div className="customer-row-wrapper">
-                            {isAdmin && (
-                              <div className="customer-row-side-actions">
-                                <button className="customer-action-btn customer-action-btn--edit" disabled={isLoading} title="Cancel editing" onClick={handleCancelEditCustomer}>
-                                  <Pencil size={16} />
-                                </button>
-                              </div>
-                            )}
-                            <div className="customer-details-row">
-                              <div className="detail-card customer-detail-name-card">
-                                <div className="detail-header">
-                                  <span className="detail-title">Customer Name</span>
-                                  <User className="detail-icon" size={20} />
-                                </div>
-                                <input
-                                  type="text"
-                                  value={editingCustomerData.name}
-                                  onChange={(e) => setEditingCustomerData({ ...editingCustomerData, name: e.target.value })}
-                                  placeholder="Enter name"
-                                  className="customer-input"
-                                  autoFocus
-                                />
-                              </div>
-                              <div className="detail-card customer-detail-phone-card">
-                                <div className="detail-header">
-                                  <span className="detail-title">Mobile</span>
-                                  <Phone className="detail-icon" size={20} />
-                                </div>
-                                <input
-                                  type="text"
-                                  value={editingCustomerData.mobile}
-                                  onChange={(e) => setEditingCustomerData({ ...editingCustomerData, mobile: e.target.value })}
-                                  placeholder="Enter mobile"
-                                  className="customer-input"
-                                />
-                              </div>
-                              <div className="detail-card customer-detail-email-card">
-                                <div className="detail-header">
-                                  <span className="detail-title">Email</span>
-                                  <Mail className="detail-icon" size={20} />
-                                </div>
-                                <input
-                                  type="email"
-                                  value={editingCustomerData.email}
-                                  onChange={(e) => setEditingCustomerData({ ...editingCustomerData, email: e.target.value })}
-                                  placeholder="Enter email (optional)"
-                                  className="customer-input"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="form-action-buttons-center">
-                            <SaveButton onClick={handleSaveEditedCustomer} disabled={isLoading} size="medium" title="Save customer" showLabel={true} />
-                            <CancelButton onClick={handleCancelEditCustomer} disabled={isLoading} size="medium" title="Cancel" showLabel={true} />
-                          </div>
-                        </>
-                      ) : (
-                        <div className="customer-row-wrapper">
-                          {isAdmin && (
-                            <div className="customer-row-side-actions">
-                              <button
-                                className="customer-action-btn customer-action-btn--edit"
-                                onClick={() => handleEditCustomer(index)}
-                                disabled={isLoading}
-                                title="Edit customer"
-                              >
-                                <Pencil size={16} />
-                              </button>
-                              <button
-                                className="customer-action-btn customer-action-btn--delete"
-                                onClick={() => handleDeleteCustomer(index)}
-                                disabled={isLoading}
-                                title="Delete customer"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          )}
-                          <div className="customer-details-row">
-                            <div className="detail-card customer-detail-name-card">
-                              <div className="detail-header">
-                                <span className="detail-title">Customer Name</span>
-                                <User className="detail-icon" size={20} />
-                              </div>
-                              <div className="detail-value">{customer.name || '—'}</div>
-                            </div>
-                            <div className="detail-card customer-detail-phone-card">
-                              <div className="detail-header">
-                                <span className="detail-title">Mobile</span>
-                                <Phone className="detail-icon" size={20} />
-                              </div>
-                              <div className="detail-value">{customer.mobile || '—'}</div>
-                            </div>
-                            <div className="detail-card customer-detail-email-card">
-                              <div className="detail-header">
-                                <span className="detail-title">Email</span>
-                                <Mail className="detail-icon" size={20} />
-                              </div>
-                              <div className="detail-value">{customer.email || '—'}</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
-
-              {isAddingCustomer ? (
-                <>
-                  <div className="customer-details-row">
-                    <div className="detail-card customer-detail-name-card">
-                      <div className="detail-header">
-                        <span className="detail-title">Customer Name</span>
-                        <User className="detail-icon" size={20} />
-                      </div>
-                      <input
-                        type="text"
-                        value={newCustomer.name}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                        placeholder="Enter name"
-                        className="customer-input"
-                        autoFocus
-                      />
-                    </div>
-
-                    <div className="detail-card customer-detail-phone-card">
-                      <div className="detail-header">
-                        <span className="detail-title">Mobile</span>
-                        <Phone className="detail-icon" size={20} />
-                      </div>
-                      <input
-                        type="text"
-                        value={newCustomer.mobile}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, mobile: e.target.value })}
-                        placeholder="Enter mobile"
-                        className="customer-input"
-                      />
-                    </div>
-
-                    <div className="detail-card customer-detail-email-card">
-                      <div className="detail-header">
-                        <span className="detail-title">Email</span>
-                        <Mail className="detail-icon" size={20} />
-                      </div>
-                      <input
-                        type="email"
-                        value={newCustomer.email}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                        placeholder="Enter email (optional)"
-                        className="customer-input"
-                      />
-                    </div>
+              <div className="form-action-buttons-center">
+                <SaveButton onClick={handleSaveNewCustomer} disabled={isLoading} size="medium" title="Save customer" showLabel={true} />
+                <CancelButton onClick={handleCancelAddCustomer} disabled={isLoading} size="medium" title="Cancel adding" showLabel={true} />
+              </div>
+            </>
+          ) : (
+            <>
+              {ledgerData && additionalCustomers.length < 3 && (
+                <div className="customer-details-row">
+                  <div className="detail-card add-customer-card" onClick={handleAddCustomer} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <AddCustomerButton onClick={handleAddCustomer} disabled={isLoading} title="Add another customer" />
                   </div>
-                  <div className="form-action-buttons-center">
-                    <SaveButton
-                      onClick={handleSaveNewCustomer}
-                      disabled={isLoading}
-                      size="medium"
-                      title="Save customer"
-                      showLabel={true}
-                    />
-                    <CancelButton
-                      onClick={handleCancelAddCustomer}
-                      disabled={isLoading}
-                      size="medium"
-                      title="Cancel adding"
-                      showLabel={true}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  {additionalCustomers.length < 3 && (
-                    <div className="customer-details-row">
-                      <div className="detail-card add-customer-card" onClick={handleAddCustomer} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <AddCustomerButton
-                          onClick={handleAddCustomer}
-                          disabled={isLoading}
-                          title="Add another customer"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </>
+                </div>
               )}
-            </div>
+            </>
+          )}
         </div>
+      </div>
     </div>
   );
 }

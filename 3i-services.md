@@ -1,8 +1,8 @@
 # 3i Services CRM — Complete Application Documentation
 
 ```
-VERSION: 1.0
-LAST_UPDATED: 2026-04-14
+VERSION: 1.1
+LAST_UPDATED: 2026-04-15
 PURPOSE: Human-readable and AI-parseable reference for all function flows,
          data models, API endpoints, security rules, and frontend interactions.
 

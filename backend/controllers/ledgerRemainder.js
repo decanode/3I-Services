@@ -10,7 +10,10 @@ const { processCustomerData } = require('../utils/customerValidator');
 exports.listPaged = async (req, res) => {
   try {
     const cityFilter = req.user.role === 'admin' ? null : (req.user.city || null);
-    const after = req.query.after != null ? parseInt(req.query.after, 10) : undefined;
+    let after;
+    if (req.query.after != null) {
+      try { after = JSON.parse(req.query.after); } catch { after = undefined; }
+    }
     const result = await ledgerRemainderService.listPaged({ after, city: cityFilter });
     res.json({ count: result.rows.length, rows: result.rows, nextCursor: result.nextCursor });
   } catch (error) {
@@ -184,7 +187,7 @@ exports.update = async (req, res) => {
     // Fetch previous data BEFORE update for comparison
     const previousData = (await ledgerRemainderService.getByLedgerId(ledger_id)) || {};
 
-    const result = await ledgerRemainderService.updateByLedgerId(ledger_id, updateData);
+    const result = await ledgerRemainderService.updateByLedgerId(ledger_id, updateData, { userId: req.user?.userId });
 
     console.log('Update result:', result);
 

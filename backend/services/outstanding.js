@@ -2,6 +2,7 @@ const { db } = require('../config/firebase');
 const { COLLECTION_NAME: EXCEL_MASTER_COLLECTION } = require('../models/excelMaster');
 const ledgerRemainderService = require('./ledgerRemainder');
 const ledgerLogsService = require('./ledgerLogs');
+const counterService = require('./counter');
 
 /**
  * Parse date in DD/MM/YYYY format to ISO string
@@ -82,20 +83,20 @@ class OutstandingService {
       return results;
     }
 
-    // Batch pre-fetch all ledger_ids from Excel_master for validation
+    // Batch pre-fetch full master docs for validation and Outstanding_Remainder creation
     const allLedgerIds = [...new Set(
       validRecords
         .map(r => String(r.ledger || '').trim().replace(/\s+/g, '').toUpperCase())
         .filter(Boolean)
     )];
-    const masterLedgerIds = new Set();
+    const masterDocs = new Map(); // ledger_id -> full master doc data
     for (let i = 0; i < allLedgerIds.length; i += 30) {
       const idBatch = allLedgerIds.slice(i, i + 30);
       const snapshot = await db
         .collection(EXCEL_MASTER_COLLECTION)
         .where('ledger_id', 'in', idBatch)
         .get();
-      snapshot.forEach(doc => masterLedgerIds.add(doc.data().ledger_id));
+      snapshot.forEach(doc => masterDocs.set(doc.data().ledger_id, doc.data()));
     }
 
     const logsToCreate = [];
@@ -118,7 +119,7 @@ class OutstandingService {
         }
 
         // Validate: ledger must exist in Excel_master
-        if (!masterLedgerIds.has(ledgerId)) {
+        if (!masterDocs.has(ledgerId)) {
           results.notFound.push({
             ledger: record.ledger,
             ledger_id: ledgerId,
@@ -127,7 +128,13 @@ class OutstandingService {
           continue;
         }
 
-        // Find the ledger in Ledger_Remainder for updating
+        // Parse incoming values (needed for both CREATE and UPDATE paths)
+        const parsedDate = parseDateFormat(record.date);
+        const newDebit = parseFloat(record.debit || 0) || 0;
+        const newCredit = parseFloat(record.credit || 0) || 0;
+        const newComments = String(record.comments || '').trim();
+
+        // Find the ledger in Outstanding_Remainder for updating
         const ledgerSnapshot = await db
           .collection('Outstanding_Remainder')
           .where('ledger_id', '==', ledgerId)
@@ -135,15 +142,55 @@ class OutstandingService {
           .get();
 
         if (ledgerSnapshot.empty) {
-          results.notFound.push({
-            ledger: record.ledger,
+          // Ledger is in master but not yet in Outstanding_Remainder — CREATE it
+          const masterData = masterDocs.get(ledgerId);
+          const now = new Date().toISOString();
+          const newRef = db.collection('Outstanding_Remainder').doc();
+          const newRecord = {
             ledger_id: ledgerId,
-            reason: 'Ledger exists in master but has no remainder record',
+            ledger_name: masterData.ledger || '',
+            city: String(masterData.city || '').trim().toLowerCase(),
+            group: String(record.group || masterData.group || '').trim(),
+            contact: masterData.contact || '',
+            mobile: masterData.mobile || '',
+            email: masterData.email || '',
+            debit: newDebit,
+            credit: newCredit,
+            nextCallDate: '',
+            lastComments: newComments || '',
+            lastTransactionDate: parsedDate || '',
+            createdAt: now,
+            createdByUserId: userId || null,
+            sourceFileName: fileName || null,
+            updatedAt: now,
+            lastUpdatedAt: now,
+            updatedByUserId: userId || null,
+          };
+          await newRef.set(newRecord);
+          results.updated += 1;
+
+          logsToCreate.push({
+            ledger_id: ledgerId,
+            ledger_name: newRecord.ledger_name,
+            group: newRecord.group,
+            ldebit: newDebit,
+            lcredit: newCredit,
+            nextCallDate: '',
+            date: parsedDate || String(record.date || '').trim(),
+            comments: newComments,
+            operation: 'insert',
+            updatedFields: ['ldebit', 'lcredit', 'comments'],
+            userId,
+            city: newRecord.city,
           });
+
+          results.found.push({ ledger: record.ledger, ledger_id: ledgerId, created: true,
+            debit: newDebit, credit: newCredit });
+          results.processed += 1;
           continue;
         }
 
-        // Get existing ledger document
+        // Get existing ledger document (UPDATE path)
         const ledgerDoc = ledgerSnapshot.docs[0];
         const ledgerRef = ledgerDoc.ref;
         const ledgerData = ledgerDoc.data();
@@ -153,13 +200,6 @@ class OutstandingService {
         const previousCredit = ledgerData.credit || 0;
         const previousDate = ledgerData.lastTransactionDate || '';
         const previousComments = ledgerData.lastComments || '';
-
-        // Parse date format (dd/mm/yyyy to yyyy-mm-dd)
-        const parsedDate = parseDateFormat(record.date);
-        
-        const newDebit = parseFloat(record.debit || 0) || 0;
-        const newCredit = parseFloat(record.credit || 0) || 0;
-        const newComments = String(record.comments || '').trim();
 
         // Avoid duplication: Skip updates if debit, credit, date, and comments are all exactly the same
         if (
@@ -250,6 +290,13 @@ class OutstandingService {
       } catch (error) {
         console.error('Error creating logs:', error);
       }
+    }
+
+    // Update all counter fields: src_outstanding, src_outstanding_date, totalLedgers, totaldebit, totalcredit
+    try {
+      await counterService.updateOutstandingUpload(fileName);
+    } catch (e) {
+      console.error('[counter] outstanding upload update failed:', e);
     }
 
     return results;

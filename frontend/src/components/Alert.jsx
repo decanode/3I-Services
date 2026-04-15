@@ -110,6 +110,7 @@ export default function Alert({
             {/* Outstanding upload stats */}
             {stats?.type === 'outstanding' && (
               <div className="alert-success-stats">
+                {/* Stat rows hidden — show filename only (excel.jsx sets stats.processed/updated/logsCreated/notFound)
                 <div className="alert-success-stat-item">
                   <span className="alert-success-stat-label">Processed</span>
                   <span className="alert-success-stat-value">{stats.processed}</span>
@@ -128,6 +129,7 @@ export default function Alert({
                     <span className="alert-success-stat-value alert-success-stat-value--warn">{stats.notFound}</span>
                   </div>
                 )}
+                */}
                 {stats.fileName && (
                   <div className="alert-success-file-tag">
                     <FileText size={13} />
@@ -140,6 +142,7 @@ export default function Alert({
             {/* Master upload stats */}
             {stats?.type === 'master' && (
               <div className="alert-success-stats">
+                {/* Stat rows hidden — show filename only (excel.jsx sets stats.inserted/updated via data.inserted/updated)
                 <div className="alert-success-stat-item">
                   <span className="alert-success-stat-label">Total</span>
                   <span className="alert-success-stat-value">{(stats.inserted ?? 0) + (stats.updated ?? 0)}</span>
@@ -152,6 +155,7 @@ export default function Alert({
                   <span className="alert-success-stat-label">Updated</span>
                   <span className="alert-success-stat-value">{stats.updated ?? 0}</span>
                 </div>
+                */}
                 {stats.fileName && (
                   <div className="alert-success-file-tag">
                     <FileText size={13} />

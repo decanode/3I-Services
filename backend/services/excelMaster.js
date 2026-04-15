@@ -1,7 +1,6 @@
 const { db } = require('../config/firebase');
 const { COLLECTION_NAME, pickMasterFields, EXCEL_MASTER_FIELDS } = require('../models/excelMaster');
-const ledgerRemainderService = require('./ledgerRemainder');
-const counterService = require('./counterService');
+const counterService = require('./counter');
 
 const BATCH_MAX = 400;
 
@@ -65,27 +64,18 @@ class ExcelMasterService {
       }
     }
 
-    // Reserve sequential IDs for all new records in one atomic transaction,
-    // then write them in batches outside the transaction.
-    const newLedgerIdMap = new Map(); // ledger_id -> sequence_id (for new docs only)
-
     if (rowsToInsert.length > 0) {
-      const { firstId } = await counterService.reserveMasterIds(rowsToInsert.length);
-
       for (let i = 0; i < rowsToInsert.length; i += BATCH_MAX) {
         const batch = db.batch();
         const chunk = rowsToInsert.slice(i, i + BATCH_MAX);
-        for (let j = 0; j < chunk.length; j++) {
-          const n = firstId + (i + j);
-          const ref = this.collection.doc(`M${n}`);
+        for (const row of chunk) {
+          const ref = this.collection.doc(); // auto-generated ID
           batch.set(ref, {
-            ...chunk[j],
-            sequence_id: n,
+            ...row,
             importedAt,
             importedByUserId: userId || null,
             sourceFileName: fileName || null,
           });
-          newLedgerIdMap.set(chunk[j].ledger_id, n);
           inserted += 1;
         }
         await batch.commit();
@@ -109,14 +99,9 @@ class ExcelMasterService {
       await batch.commit();
     }
 
-    // Populate Outstanding_Remainder for all rows (inserted + updated + unchanged).
-    // newLedgerIdMap carries the sequence numbers so OR- docs get matching IDs.
-    const allRows = [...rowsToInsert, ...rowsToUpdate.map(r => r.row), ...unchangedRows];
-    try {
-      await ledgerRemainderService.upsertFromExcelRecords(allRows, meta, newLedgerIdMap);
-    } catch (error) {
-      console.error('Error populating Outstanding_Remainder:', error);
-    }
+    // Update counter: src_master, src_master_date, totalLedgers (fire-and-forget)
+    counterService.updateMasterUpload(fileName).catch(e =>
+      console.error('[counter] master upload update failed:', e));
 
     return { inserted, updated };
   }
@@ -143,10 +128,9 @@ class ExcelMasterService {
    * @returns {{ rows: object[], nextCursor: number|null }}
    */
   async listPaged(opts = {}) {
-    let query = this.collection.orderBy('sequence_id', 'desc').limit(15);
+    let query = this.collection.orderBy('ledger_id', 'asc').limit(15);
     if (opts.after != null) {
-      const after = parseInt(String(opts.after), 10);
-      if (!Number.isNaN(after)) query = query.startAfter(after);
+      query = query.startAfter(String(opts.after));
     }
     const snapshot = await query.get();
     const rows = [];
@@ -154,12 +138,11 @@ class ExcelMasterService {
       const data = doc.data();
       const picked = pickMasterFields(data);
       if (data.ledger_id) picked.ledger_id = data.ledger_id;
-      if (data.sequence_id != null) picked.sequence_id = data.sequence_id;
       rows.push({ id: doc.id, ...picked });
     });
     return {
       rows,
-      nextCursor: rows.length === 15 ? rows[rows.length - 1].sequence_id : null,
+      nextCursor: rows.length === 15 ? rows[rows.length - 1].ledger_id : null,
     };
   }
 

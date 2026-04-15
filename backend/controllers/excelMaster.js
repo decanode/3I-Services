@@ -148,12 +148,12 @@ exports.uploadOutstanding = async (req, res) => {
 };
 
 /**
- * GET /api/excel/master/paged?after={sequence_id}
+ * GET /api/excel/master/paged?after={ledger_id}
  * Cursor-based pagination — always reads exactly 15 Firestore documents.
  */
 exports.listMasterPaged = async (req, res) => {
   try {
-    const after = req.query.after != null ? parseInt(req.query.after, 10) : undefined;
+    const after = req.query.after != null ? String(req.query.after) : undefined;
     const result = await excelMasterService.listPaged({ after });
     res.json({ count: result.rows.length, columns: LIST_COLUMNS, rows: result.rows, nextCursor: result.nextCursor });
   } catch (e) {
