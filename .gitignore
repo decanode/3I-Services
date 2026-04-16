@@ -11,3 +11,6 @@ firestore.indexes.json
 # Dev-only tools (not for repo)
 backend/package.json
 frontend/src/dev/FirebaseMonitor.jsx
+
+# Root monorepo package.json (not needed for Firebase App Hosting)
+package.json
