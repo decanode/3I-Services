@@ -58,14 +58,14 @@ env:
   # Environment variables (sensitive) — stored in Google Secret Manager
 
   - variable: FIREBASE_API_KEY
-    secret: projects/i-services-crm/secrets/FIREBASE_API_KEY
+    secret: projects/693049807057/secrets/FIREBASE_API_KEY
 
   #used for Development
   - variable: JWT_SECRET
-    secret: projects/i-services-crm/secrets/JWT_SECRET
+    secret: projects/693049807057/secrets/JWT_SECRET
 
   - variable: EMAIL_USER
-    secret: projects/i-services-crm/secrets/EMAIL_USER
+    secret: projects/693049807057/secrets/EMAIL_USER
 
   - variable: EMAIL_PASSWORD
-    secret: projects/i-services-crm/secrets/EMAIL_PASSWORD
+    secret: projects/693049807057/secrets/EMAIL_PASSWORD
