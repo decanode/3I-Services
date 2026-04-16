@@ -1,8 +1,8 @@
 # 3i Services CRM — Complete Application Documentation
 
 ```
-VERSION: 1.1
-LAST_UPDATED: 2026-04-15
+VERSION: 1.2
+LAST_UPDATED: 2026-04-16
 PURPOSE: Human-readable and AI-parseable reference for all function flows,
          data models, API endpoints, security rules, and frontend interactions.
 
@@ -37,7 +37,8 @@ AI_PARSING_NOTES:
    - [6.7 Ledger Logs /api/ledger-logs](#67-ledger-logs--apiledger-logs)
    - [6.8 Admin Dashboard /api/admin](#68-admin-dashboard--apiadmin)
    - [6.9 Seeder /api/seed](#69-seeder--apiseed)
-   - [6.10 System /health](#610-system-endpoints)
+   - [6.10 Counter /api/counter](#610-counter--apicounter)
+   - [6.11 System /health](#611-system-endpoints)
 7. [Backend — Services](#7-backend--services)
    - [7.1 user.js](#71-userjs)
    - [7.2 registration.js](#72-registrationjs)
@@ -47,6 +48,7 @@ AI_PARSING_NOTES:
    - [7.6 outstanding.js](#76-outstandingjs)
    - [7.7 activity.js](#77-activityjs)
    - [7.8 otp.js](#78-otpjs)
+   - [7.9 counter.js](#79-counterjs)
 8. [Backend — Utilities](#8-backend--utilities)
    - [8.1 jwt.js](#81-jwtjs)
    - [8.2 mailer.js](#82-mailerjs)
@@ -165,6 +167,7 @@ Ledger_logs updated (logs date/comment changes too)
 │   │   ├── ledgerRemainder.js
 │   │   ├── ledgerLogs.js
 │   │   ├── adminDashboard.js
+│   │   ├── counter.js
 │   │   └── seeder.js
 │   │
 │   ├── controllers/         # Request/response handling, validation, orchestration
@@ -176,6 +179,7 @@ Ledger_logs updated (logs date/comment changes too)
 │   │   ├── ledgerRemainder.js
 │   │   ├── ledgerLogs.js
 │   │   ├── adminDashboard.js
+│   │   ├── counter.js
 │   │   └── seeder.js
 │   │
 │   ├── services/            # Business logic, Firestore operations
@@ -186,6 +190,7 @@ Ledger_logs updated (logs date/comment changes too)
 │   │   ├── ledgerLogs.js
 │   │   ├── outstanding.js
 │   │   ├── activity.js
+│   │   ├── counter.js
 │   │   └── otp.js
 │   │
 │   ├── middleware/
@@ -198,6 +203,7 @@ Ledger_logs updated (logs date/comment changes too)
 │   │   ├── excelMaster.js
 │   │   ├── ledgerRemainder.js
 │   │   ├── ledgerLogs.js
+│   │   ├── counter.js
 │   │   └── outstanding.js
 │   │
 │   └── utils/
@@ -334,6 +340,7 @@ Route mounts:
   /api/excel          → routes/excelMaster.js
   /api/ledger-remainder → routes/ledgerRemainder.js
   /api/ledger-logs    → routes/ledgerLogs.js
+  /api/counter        → routes/counter.js
   /api/admin          → routes/adminDashboard.js
   /api/seed           → routes/seeder.js
 ```
@@ -822,6 +829,26 @@ ERRORS:
 
 ---
 
+#### GET /api/excel/master/paged
+
+```
+AUTH: Required (any role)
+QUERY PARAMS: after (string — ledger_id of the last row on the previous page)
+CALL CHAIN:
+  controller.listMasterPaged → excelMasterService.listPaged({ after })
+  [reads 'Excel_master' ordered by ledger_id ASC, startAfter cursor if provided]
+RESPONSE (200):
+  {
+    count: number,
+    columns: [ column names ],
+    rows: [ { ledger_id, ...masterFields } ],
+    nextCursor: string | null   (ledger_id of last row, null when no more pages)
+  }
+NOTE: Always returns exactly 15 rows per page; pass nextCursor as after= on the next call
+```
+
+---
+
 #### POST /api/excel/master/upload
 
 ```
@@ -938,6 +965,29 @@ RESPONSE (200):
     count: number,
     columns: [ column names ]
   }
+```
+
+---
+
+#### GET /api/ledger-remainder/paged
+
+```
+AUTH: Required (any role)
+QUERY PARAMS: after (JSON string — cursor object { nextCallDate, ledger_id } from previous page)
+CALL CHAIN:
+  controller.listPaged → ledgerRemainderService.listPaged({ after, city })
+  [reads 'Outstanding_Remainder' ordered by nextCallDate DESC, ledger_id ASC]
+  [city-filtered for employees]
+RESPONSE (200):
+  {
+    count: number,
+    rows: [ { ...remainder fields } ],
+    nextCursor: { nextCallDate: string, ledger_id: string } | null
+  }
+REQUIRES INDEXES:
+  nextCallDate DESC + ledger_id ASC (no city filter)
+  city ASC + nextCallDate DESC + ledger_id ASC (with city filter)
+NOTE: Always returns exactly 15 rows per page
 ```
 
 ---
@@ -1102,6 +1152,25 @@ RESPONSE (200):
 
 ---
 
+#### GET /api/ledger-logs/paged
+
+```
+AUTH: Required (any role)
+QUERY PARAMS: after (string — ISO timestamp of the last row on the previous page)
+CALL CHAIN:
+  controller.listPaged → ledgerLogsService.listPaged({ after, city })
+  [reads 'Ledger_logs' ordered by timestamp DESC, city-filtered for employees]
+RESPONSE (200):
+  {
+    count: number,
+    rows: [ { id, ...log fields } ],
+    nextCursor: string | null   (timestamp of last row, null when no more pages)
+  }
+NOTE: Always returns exactly 15 rows per page
+```
+
+---
+
 #### GET /api/ledger-logs/export
 
 ```
@@ -1205,6 +1274,24 @@ RESPONSE (200):
 
 ---
 
+#### PATCH /api/admin/users/:userId
+
+```
+AUTH: Required | ROLE: admin
+PARAMS: userId (custom string userId)
+REQUEST BODY (all optional):
+  { city: string, phone: string, countryCode: string }
+CALL CHAIN:
+  controller.updateUserContact
+    → userService.updateUser(userId, { city, phone, countryCode })  [updates 'users']
+RESPONSE (200): { message: "User updated successfully.", ...updatedFields }
+ERRORS:
+  400 — no valid fields provided
+  500 — Firestore error
+```
+
+---
+
 #### DELETE /api/admin/users/:userId
 
 ```
@@ -1212,12 +1299,13 @@ AUTH: Required | ROLE: admin
 PARAMS: userId (custom string userId)
 CALL CHAIN:
   controller.deleteUser
-    → userService.findByUserId(userId)    [reads 'users']
-    → db.collection('users').doc(docId).delete()
-    → Firebase Auth: deleteUser(uid)      [best-effort, no error thrown if fails]
+    → userService.deleteUser(userId)
+        → findByUserId(userId)                     [reads 'users']
+        → Firebase Auth: getUserByEmail → deleteUser  [best-effort]
+        → db.collection('users').doc(docId).delete()
 RESPONSE (200): { message: "User deleted successfully." }
 ERRORS:
-  404 — user not found
+  500 — user not found or Firestore error
 ```
 
 ---
@@ -1262,7 +1350,40 @@ RESPONSE (200): { admins: [...] }
 
 ---
 
-### 6.10 System Endpoints
+### 6.10 Counter — /api/counter
+
+**Files:** `backend/routes/counter.js` → `backend/controllers/counter.js`
+
+---
+
+#### GET /api/counter
+
+```
+AUTH: Required (any role)
+CALL CHAIN:
+  controller.getStats → counterService.getCounter()   [reads 'counters' doc 'app_stats']
+RESPONSE (200):
+  {
+    stats: {
+      src_master: string | null,          (filename of last master upload)
+      src_outstanding: string | null,     (filename of last outstanding upload)
+      src_master_date: ISO string | null, (timestamp of last master upload)
+      src_outstanding_date: ISO string | null,
+      totalLedgers: number,               (count of Excel_master documents)
+      totaldebit: number,                 (sum of all Outstanding_Remainder.debit)
+      totalcredit: number                 (sum of all Outstanding_Remainder.credit)
+    }
+  }
+NOTE: Counter is updated automatically after every master/outstanding upload.
+      Returns {} if no uploads have occurred yet.
+ERRORS:
+  401 — not authenticated
+  500 — Firestore error
+```
+
+---
+
+### 6.11 System Endpoints
 
 ```
 GET /health
@@ -1315,9 +1436,10 @@ FUNCTION: updateUser(userId, data)
   NOTE: finds doc by userId field first, then updates by Firestore ID
 
 FUNCTION: deleteUser(userId)
-  CALLS: db.collection('users').doc(docId).delete()
-         Firebase Auth: deleteUser(uid)  [best-effort]
-  SIDE_EFFECTS: removes user from Firestore and Firebase Auth
+  CALLS: findByUserId(userId)
+         Firebase Auth: getUserByEmail → deleteUser  [best-effort, warn on failure]
+         db.collection('users').doc(docId).delete()
+  SIDE_EFFECTS: removes user from Firestore and Firebase Auth (Auth deletion is best-effort)
 ```
 
 ---
@@ -1548,11 +1670,11 @@ FUNCTION: getLastLogin(userId)
            .limit(1).get()
   RETURNS: { timestamp, date: "DD/MM/YYYY", time: "HH:MM AM/PM" } | null
 
-FUNCTION: getAllLastLogins(userIds)
-  PARAMS: array of userId strings
+FUNCTION: getAllLastLogins()
   CALL CHAIN:
-    → for each userId: getLastLogin(userId) [parallelized with Promise.all]
-  RETURNS: Map<userId → lastLoginData | null>
+    → db.collection('loginActivities').get()   [single full collection read]
+    → builds Map<userId → most-recent activity> in memory (latest timestamp wins per user)
+  RETURNS: Map<userId → { date, time, timestamp } | undefined>
 ```
 
 ---
@@ -1596,6 +1718,42 @@ FUNCTION: cleanupExpired()
          → batch delete found documents
   RETURNS: { deleted: number }
   NOTE: scheduled to run every OTP_VALID_TIME seconds on server start
+```
+
+---
+
+### 7.9 counter.js
+
+**File:** `backend/services/counter.js`
+
+```
+COLLECTION: 'counters'  DOCUMENT ID: 'app_stats'
+
+FUNCTION: updateMasterUpload(fileName)
+  CALL CHAIN:
+    → db.collection('Excel_master').count().get()   [aggregate count query]
+    → counterRef().set({ src_master, src_master_date, totalLedgers }, { merge:true })
+  SIDE_EFFECTS: updates counters/app_stats
+  CALLED BY: excelMasterService.bulkInsert (fire-and-forget)
+
+FUNCTION: updateOutstandingUpload(fileName)
+  CALL CHAIN:
+    → db.collection('Excel_master').count().get()   [aggregate count]
+    → db.collection('Outstanding_Remainder').select('debit','credit').get()  [field projection]
+    → counterRef().set({ src_outstanding, src_outstanding_date, totalLedgers, totaldebit, totalcredit }, { merge:true })
+  CALLED BY: outstandingService.processOutstandingRecords (awaited)
+
+FUNCTION: updateLedgerTotals()
+  CALL CHAIN:
+    → db.collection('Outstanding_Remainder').select('debit','credit').get()
+    → counterRef().set({ totaldebit, totalcredit }, { merge:true })
+  CALLED BY: ledgerRemainderService.upsertFromExcelRecords,
+             ledgerRemainderService.updateByLedgerId (both fire-and-forget)
+
+FUNCTION: getCounter()
+  CALLS: counterRef().get()
+  RETURNS: { src_master, src_outstanding, src_master_date, src_outstanding_date,
+             totalLedgers, totaldebit, totalcredit } | {}
 ```
 
 ---
@@ -1896,8 +2054,10 @@ FUNCTION: deleteSession(userId)
 | `debit` | number | Current outstanding debit |
 | `credit` | number | Current outstanding credit |
 | `nextCallDate` | string | YYYY-MM-DD or null |
-| `lastComments` | array of objects | Max 5 comments. Format: `[{ text: string, date: ISO_timestamp }, ...]` |
-| `lastUpdatedAt` | Timestamp | Last modification time |
+| `lastComments` | array of objects | Max 5 comments. Format: `[{ text: string, date: ISO_timestamp, userId: string }, ...]` |
+| `lastUpdatedAt` | Timestamp | Last modification time (legacy — prefer `updatedAt`) |
+| `updatedAt` | string | ISO timestamp set on every update |
+| `lastTransactionDate` | string | YYYY-MM-DD date from outstanding upload |
 | `updatedByUserId` | string | userId of last updater |
 | `sourceFileName` | string | Excel file that last updated this |
 | `contact` | string | From master data |
@@ -1923,8 +2083,10 @@ FUNCTION: deleteSession(userId)
 
 | Type | Fields | Order | Used By |
 |---|---|---|---|
-| Single field | `nextCallDate` | ASC | Upcoming reminders (admin view, no city filter) |
-| Composite | `city` ASC, `nextCallDate` ASC | — | Upcoming reminders (employee view, city-filtered) |
+| Composite | `city` ASC, `updatedAt` DESC | — | `list()` with city filter |
+| Composite | `city` ASC, `nextCallDate` ASC | — | `getUpcomingRemainders` with city |
+| Composite | `nextCallDate` DESC, `ledger_id` ASC | — | `listPaged` (no city filter) |
+| Composite | `city` ASC, `nextCallDate` DESC, `ledger_id` ASC | — | `listPaged` with city |
 
 ---
 
@@ -1959,9 +2121,9 @@ FUNCTION: deleteSession(userId)
 | `userId` | string | Custom userId |
 | `timestamp` | Timestamp | Login time |
 
-**Required Firestore Index:** `userId` ASC, `timestamp` DESC (composite)
+**Required Firestore Index:** `userId` ASC, `timestamp` DESC — used by `getLastLogin()`
 
-**Constraint:** Max 2 records per userId (oldest deleted when 3rd login happens)
+**Constraint:** Max 2 records per userId (cleanup runs after every login)
 
 ---
 
@@ -1977,6 +2139,24 @@ FUNCTION: deleteSession(userId)
 | `expiresAt` | Timestamp | createdAt + OTP_VALID_TIME seconds |
 
 **Cleanup:** Server-side scheduled job runs every `OTP_VALID_TIME` seconds, deletes expired OTPs (max 100 per run)
+
+---
+
+### Collection: `counters`
+
+**Key field:** Single document with fixed ID `app_stats`
+
+| Field | Type | Notes |
+|---|---|---|
+| `src_master` | string \| null | Filename of the last Excel master upload |
+| `src_master_date` | string | ISO timestamp of last master upload |
+| `src_outstanding` | string \| null | Filename of the last outstanding upload |
+| `src_outstanding_date` | string | ISO timestamp of last outstanding upload |
+| `totalLedgers` | number | Count of documents in `Excel_master` |
+| `totaldebit` | number | Sum of `debit` across all `Outstanding_Remainder` docs |
+| `totalcredit` | number | Sum of `credit` across all `Outstanding_Remainder` docs |
+
+**Update triggers:** `updateMasterUpload` on master upload, `updateOutstandingUpload` on outstanding upload, `updateLedgerTotals` when remainder debit/credit change.
 
 ---
 
@@ -2121,9 +2301,11 @@ EMPLOYEE VIEW BEHAVIOR:
   2. Quick nav cards: View Master, View Outstanding, View Logs, Notify
 
 API CALLS (admin):
-  GET  /api/admin/dashboard
-  PUT  /api/signup/approve/:id
-  PUT  /api/signup/reject/:id
+  GET    /api/admin/dashboard
+  GET    /api/counter
+  PUT    /api/signup/approve/:id
+  PUT    /api/signup/reject/:id
+  PATCH  /api/admin/users/:userId
   DELETE /api/admin/users/:userId
 
 API CALLS (employee):
@@ -2164,14 +2346,14 @@ STATE:
   loading, error
 
 KEY BEHAVIOR:
-  1. On mount: GET /api/excel/master?limit=1000
-  2. Search: filters rows by any text match across all fields
-  3. Expand columns: toggle between default visible columns and all 42 fields
-  4. Pagination: 15 rows per page
+  1. On mount: GET /api/excel/master/paged (cursor-based, 15 rows per page)
+  2. Next page: pass nextCursor as after= query param
+  3. Search: client-side text filter across all fields
+  4. Expand columns: toggle between default visible columns and all 42 fields
   5. Table shows: ledger_id, code, ledger, city, group, name, contact, mobile, email, ...
 
 API CALLS:
-  GET /api/excel/master?limit=1000
+  GET /api/excel/master/paged?after={ledger_id}
 ```
 
 ---
@@ -2190,14 +2372,14 @@ STATE:
   loading, error
 
 KEY BEHAVIOR:
-  1. On mount: GET /api/ledger-remainder?limit=1000
-  2. Search: filter by ledger_name, city, group
-  3. Click row → navigate to /view-notify-detail?ledger_id=...
-  4. Pagination: 15 rows per page
+  1. On mount: GET /api/ledger-remainder/paged (cursor-based, 15 rows per page)
+  2. Next page: pass nextCursor JSON as after= query param
+  3. Search: client-side filter by ledger_name, city, group
+  4. Click row → navigate to /view-notify-detail?ledger_id=...
   5. Table columns: ledger_name, group, city, debit, credit, nextCallDate, lastComments
 
 API CALLS:
-  GET /api/ledger-remainder?limit=1000
+  GET /api/ledger-remainder/paged?after={cursor_json}
 ```
 
 ---
@@ -2219,11 +2401,12 @@ STATE:
   loading, exporting, error
 
 KEY BEHAVIOR:
-  1. On mount: GET /api/ledger-logs?limit=500
+  1. On mount: GET /api/ledger-logs/paged (cursor-based, 15 rows per page)
   2. Client-side filters:
        - searchText: match ledger_name
        - filterType: show only debit-related or credit-related logs
        - filterOperation: show only inserts or updates
+       - Advanced: filter by ledger names, userIds, date ranges
   3. Export button: GET /api/ledger-logs/export?dateFrom=&dateTo=
        → browser download of Excel file
   4. Color coding (mirrors backend Excel export):
@@ -2231,10 +2414,10 @@ KEY BEHAVIOR:
        Red     → credit change
        Blue    → nextCallDate change
        Amber   → comment change
-  5. Pagination: 20 rows per page
+  5. Pagination: 20 rows per page (client-side on fetched page)
 
 API CALLS:
-  GET /api/ledger-logs?limit=500
+  GET /api/ledger-logs/paged?after={timestamp}
   GET /api/ledger-logs/export?dateFrom=YYYY-MM-DD&dateTo=YYYY-MM-DD
 ```
 
@@ -2677,9 +2860,9 @@ Step 3: Admin visits /home
 Step 4: Admin clicks "Approve" on the request
   → PUT /api/signup/approve/:id
     → registrationService.findById(id)            — verify exists and pending
-    → generator.generateCredentials(firstName, fatherName, dob)
-        userId   = "john1503" (firstName + DDMM)
-        password = "kuma#15"  (first4(fatherName) + '#' + DD)
+    → generator.generateRandomCredentials(firstName, fatherName, dob)
+        userId   = firstName.toLowerCase() + DDMM(dob)   e.g. "john1503" (deterministic)
+        password = cryptographically random 12-char string  (random each time)
     → Firebase Auth: admin.auth().createUser({ email, password })
     → userService.createUser({ ...data, userId, role:'employee' })
         → Firestore 'users' ← new document
@@ -2909,10 +3092,10 @@ Step 2: adminDashboard.controller.getDashboard
     Firestore 'users' ← read all documents
     returns: all employees + admins
 
-  → activityService.getAllLastLogins(userIds)
-    for each userId (parallel Promise.all):
-      Firestore 'loginActivities' ← query userId + orderBy timestamp DESC + limit 1
-    returns: Map<userId → { date, time } | null>
+  → activityService.getAllLastLogins()
+    Firestore 'loginActivities' ← single full collection read
+    builds in-memory Map<userId → most-recent record>
+    returns: Map<userId → { date, time, timestamp } | undefined>
 
   → registrationService.getPendingRequests()
     Firestore 'requests' ← where status=='pending'

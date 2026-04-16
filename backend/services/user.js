@@ -56,65 +56,25 @@ class UserService {
   }
 
   async deleteUser(userId) {
-    console.log(`[DELETE] Starting user deletion for userId: ${userId}`);
-    
-    // Step 1: Find user by userId
     const user = await this.findByUserId(userId);
-    if (!user) {
-      console.error(`[DELETE] User not found in Firestore with userId: ${userId}`);
-      throw new Error('User not found in database');
-    }
-    
-    console.log(`[DELETE] Found user in Firestore:`, {
-      firestoreId: user.id,
-      userId: user.userId,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName
-    });
+    if (!user) throw new Error('User not found in database');
 
-    // Step 2: Try to delete from Firebase Auth (optional - don't fail if this doesn't work)
     if (user.email) {
       try {
-        const normalizedEmail = user.email.toLowerCase().trim();
-        console.log(`[DELETE] Looking up user in Firebase Auth with email: ${normalizedEmail}`);
-        
-        const authUser = await auth.getUserByEmail(normalizedEmail);
-        console.log(`[DELETE] Found user in Firebase Auth with uid: ${authUser.uid}`);
-        
+        const authUser = await auth.getUserByEmail(user.email.toLowerCase().trim());
         await auth.deleteUser(authUser.uid);
-        console.log(`[DELETE] Successfully deleted user from Firebase Auth: ${authUser.uid}`);
       } catch (error) {
-        console.warn(`[DELETE] Could not delete from Firebase Auth: ${error.code || error.message}`);
-        // Don't fail the operation if Firebase Auth deletion fails
+        console.warn(`Could not delete from Firebase Auth: ${error.code || error.message}`);
       }
     }
 
-    // Step 3: Delete from Firestore (THIS IS CRITICAL)
     try {
-      console.log(`[DELETE] Attempting to delete from Firestore with docId: ${user.id}`);
-      const docRef = this.collection.doc(user.id);
-      await docRef.delete();
-      console.log(`[DELETE] Successfully deleted user from Firestore: ${user.id}`);
-      
-      // Verify deletion
-      const checkDoc = await this.collection.doc(user.id).get();
-      if (checkDoc.exists) {
-        console.error(`[DELETE] WARNING: Document still exists after deletion attempt: ${user.id}`);
-        throw new Error('Failed to verify user deletion from database');
-      }
-      console.log(`[DELETE] Verified: User successfully deleted from Firestore`);
-      
+      await this.collection.doc(user.id).delete();
     } catch (error) {
-      console.error(`[DELETE] Error deleting from Firestore:`, error.message);
       throw new Error(`Database deletion failed: ${error.message}`);
     }
 
     return true;
-  }
-
-  async checkEmailExists(email) {
-    return await this.findByEmail(email);
   }
 
   async updateUser(userId, data) {

@@ -26,15 +26,6 @@ exports.list = async (req, res) => {
   try {
     const cityFilter = req.user.role === 'admin' ? null : (req.user.city || null);
     const rows = await ledgerRemainderService.list({ limit: req.query.limit, city: cityFilter });
-    
-    // Log first row to see what fields are being returned
-    if (rows.length > 0) {
-      console.log('Sample row from Ledger_Remainder:', {
-        keys: Object.keys(rows[0]),
-        sample: rows[0]
-      });
-    }
-    
     res.json({
       rows,
       count: rows.length,
@@ -54,16 +45,6 @@ exports.upcoming = async (req, res) => {
     const days = parseInt(req.query.days || '7', 10);
     const cityFilter = req.user.role === 'admin' ? null : (req.user.city || null);
     const rows = await ledgerRemainderService.getUpcomingRemainders({ days, limit: req.query.limit, city: cityFilter });
-    
-    console.log('[UPCOMING] Returning', rows.length, 'records');
-    if (rows.length > 0) {
-      console.log('[UPCOMING] Sample row:', {
-        ledger_name: rows[0].ledger_name,
-        nextCallDate: rows[0].nextCallDate,
-        city: rows[0].city,
-      });
-    }
-    
     res.json({
       rows,
       count: rows.length,
@@ -96,9 +77,6 @@ exports.update = async (req, res) => {
   try {
     const { ledger_id } = req.params;
     const { nextCallDate, lastComments, cname1, cmob1, cemail1, cname2, cmob2, cemail2, cname3, cmob3, cemail3 } = req.body;
-
-    console.log('Update request - ledger_id:', ledger_id);
-    console.log('Update request - body:', { nextCallDate, lastComments, cname1, cmob1, cemail1, cname2, cmob2, cemail2, cname3, cmob3, cemail3 });
 
     if (!ledger_id) {
       return res.status(400).json({
@@ -155,26 +133,15 @@ exports.update = async (req, res) => {
       const { sanitized, validation, keys, isEmpty } = customerProcessResult;
 
       if (!isEmpty) {
-        // Validate customer data
         if (!validation.isValid) {
           validationErrors.push(...validation.errors.map(err => `Customer ${i}: ${err}`));
         }
 
-        // Add sanitized data to update payload
         updateData[keys.cnameKey] = sanitized.name;
         updateData[keys.cmobKey] = sanitized.mobile;
         updateData[keys.cemailKey] = sanitized.email;
-
-        console.log(`Processed customer ${i}:`, {
-          [keys.cnameKey]: sanitized.name,
-          [keys.cmobKey]: sanitized.mobile,
-          [keys.cemailKey]: sanitized.email,
-          isValid: validation.isValid,
-        });
       }
     }
-
-    console.log('Final updateData to be sent to service:', updateData);
 
     // Return validation errors if any
     if (validationErrors.length > 0) {
@@ -188,8 +155,6 @@ exports.update = async (req, res) => {
     const previousData = (await ledgerRemainderService.getByLedgerId(ledger_id)) || {};
 
     const result = await ledgerRemainderService.updateByLedgerId(ledger_id, updateData, { userId: req.user?.userId });
-
-    console.log('Update result:', result);
 
     // Create a log entry ONLY if nextCallDate or lastComments actually changed
     if (result.success && result.data) {
@@ -220,9 +185,6 @@ exports.update = async (req, res) => {
         };
 
         await ledgerLogsService.addLog(logData);
-        console.log('Log entry created for loggable field change:', changedFields);
-      } else {
-        console.log('No loggable fields changed (nextCallDate/comments), skipping log creation');
       }
     }
 
@@ -246,7 +208,6 @@ exports.update = async (req, res) => {
       }
     }
 
-    console.log('Sending success response with updated fields:', successResponse.updatedFields);
     res.json(successResponse);
   } catch (error) {
     console.error('Error updating ledger remainder:', error.message);

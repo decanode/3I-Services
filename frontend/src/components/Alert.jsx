@@ -41,7 +41,6 @@ export default function Alert({
   uploadSpeed = 0,
   uploadPhase = 'uploading',
   stats = {},
-  notFoundLedgers = [],
 }) {
   const alertCardRef = useRef(null);
 

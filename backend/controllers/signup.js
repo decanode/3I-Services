@@ -57,35 +57,22 @@ exports.register = async (req, res) => {
       return res.status(409).json({ status: 'rejected', message: 'Previous request was rejected' });
     }
 
-    // Create request
-    console.log('[INFO] Creating registration request...');
     const newRequest = await registrationService.createRequest({ firstName, lastName, fatherName, dob, email, phone: phone || '', city: (city || '').toLowerCase().trim() });
-    console.log('[SUCCESS] Registration request created with ID:', newRequest.id);
 
-    // Notify admin (fire and forget with error logging)
-    console.log('[INFO] Sending admin notification...');
-    console.log('[DEBUG] Admin email recipient:', process.env.EMAIL_USER);
-    console.log('[DEBUG] Calling sendEmailToAdmin with:', { requestId: newRequest.id, firstName, lastName, email, phone, city });
-    
-    sendEmailToAdmin({ 
-      requestId: newRequest.id, 
-      firstName, 
-      lastName, 
-      email, 
+    sendEmailToAdmin({
+      requestId: newRequest.id,
+      firstName,
+      lastName,
+      email,
       phone: phone || '',
       city: city || ''
-    }).then(() => {
-      console.log('[SUCCESS] Admin notification completed for request:', newRequest.id);
     }).catch((err) => {
-      console.error('[ERROR] Admin notification failed for request:', newRequest.id);
-      console.error('[ERROR] Error details:', err.message);
+      console.error('Admin notification failed for request:', newRequest.id, err.message);
     });
 
-    console.log('[SUCCESS] Registration response sent to user');
     res.status(201).json({ message: 'Registration submitted', requestId: newRequest.id });
   } catch (error) {
-    console.error('[ERROR] Registration error:', error.message);
-    console.error('[ERROR] Stack trace:', error.stack);
+    console.error('Registration error:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
