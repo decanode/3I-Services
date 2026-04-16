@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { auth } = require('../config/firebase');
-const { generateRandomCredentials } = require('../utils/generator');
+const { generateAdminCredentials } = require('../utils/generator');
 const { sendCredentialsEmail } = require('../utils/mailer');
 const userService = require('../services/user');
 
@@ -60,11 +60,7 @@ async function seedAdmin() {
 
     // Generate credentials
     console.log('[INFO] Generating credentials...');
-    const { generatedUserId, generatedPassword } = generateRandomCredentials(
-      firstName,
-      fatherName,
-      dob
-    );
+    const { generatedUserId, generatedPassword } = generateAdminCredentials(firstName);
 
     // Create Firebase Auth user
     console.log('[INFO] Creating Firebase Auth user...');

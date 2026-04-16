@@ -342,6 +342,12 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadedImages, setLoadedImages] = useState({});
   const [alert, setAlert] = useState(null);
+  const [emailCardHovered, setEmailCardHovered] = useState(false);
+  const [emailCardClicked, setEmailCardClicked] = useState(false);
+  const emailCardTimerRef = useRef(null);
+  const CYCLE_WORDS = ['Review', 'Suggest', 'Order', 'Consult', 'Analyse', 'Insight', 'Advise', 'Design'];
+  const [cycleIndex, setCycleIndex] = useState(0);
+  const [cycleVisible, setCycleVisible] = useState(true);
 
   const OTP_VALID_TIME = 120;
   const OTP_RESEND_TIME = 60;
@@ -581,6 +587,24 @@ export default function LoginPage() {
     }
     return () => clearInterval(interval);
   }, [otpTimer, forgotStep]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCycleVisible(false);
+      setTimeout(() => {
+        setCycleIndex(prev => (prev + 1) % CYCLE_WORDS.length);
+        setCycleVisible(true);
+      }, 350);
+    }, 1800);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleEmailCardClick = (e) => {
+    e.preventDefault();
+    if (emailCardTimerRef.current) clearTimeout(emailCardTimerRef.current);
+    setEmailCardClicked(true);
+    emailCardTimerRef.current = setTimeout(() => setEmailCardClicked(false), 3000);
+  };
 
   const generateLongShadow = (length = 15) => {
     let shadow = '';
@@ -954,6 +978,111 @@ export default function LoginPage() {
         onCancel={alert.onCancel}
       />
     )}
+
+    {/* Attribution Card */}
+    <style>{`
+      @keyframes dn-shimmer {
+        0%   { background-position: -200% center; }
+        100% { background-position:  200% center; }
+      }
+      @keyframes dn-glow-pulse {
+        0%, 100% { box-shadow: 0 2px 14px rgba(136,19,55,0.10), 0 0 0 1px rgba(251,191,36,0.18); }
+        50%       { box-shadow: 0 4px 22px rgba(136,19,55,0.22), 0 0 0 1px rgba(251,191,36,0.40); }
+      }
+      .dn-brand {
+        background: linear-gradient(90deg, #881337 0%, #c2410c 30%, #fbbf24 50%, #c2410c 70%, #881337 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: dn-shimmer 2.4s linear infinite;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      .dn-card {
+        animation: dn-glow-pulse 3s ease-in-out infinite;
+      }
+    `}</style>
+    <a
+      href="#"
+      onClick={handleEmailCardClick}
+      onMouseEnter={() => setEmailCardHovered(true)}
+      onMouseLeave={() => setEmailCardHovered(false)}
+      className="dn-card fixed bottom-3 right-3 md:bottom-5 md:right-5 z-[100] flex items-center px-3 md:px-5 rounded-xl md:rounded-2xl backdrop-blur-md bg-white/80 border border-amber-200/30 cursor-pointer select-none no-underline overflow-hidden w-[230px] md:w-[260px]"
+      style={{ height: '32px' }}
+    >
+      {(() => {
+        const showEmail = emailCardHovered || emailCardClicked;
+        return (
+          <div className="relative w-full h-full flex items-center">
+            {/* Default: created by DecaNode */}
+            <div
+              className="absolute inset-0 flex items-center gap-2"
+              style={{
+                transition: 'transform 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.35s ease, filter 0.35s ease',
+                transform: showEmail ? 'translateY(-130%)' : 'translateY(0%)',
+                opacity: showEmail ? 0 : 1,
+                filter: showEmail ? 'blur(5px)' : 'blur(0px)',
+              }}
+            >
+              <span className="text-amber-400 leading-none shrink-0" style={{ fontSize: '10px' }}>✦</span>
+              <span style={{ fontSize: '10px', fontWeight: 500, color: '#be123c', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
+                created by&nbsp;
+              </span>
+              <span className="dn-brand" style={{ fontSize: '13px' }}>DecaNode</span>
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  color: '#b45309',
+                  letterSpacing: '0.04em',
+                  whiteSpace: 'nowrap',
+                  marginLeft: '4px',
+                  transition: 'opacity 0.35s ease, transform 0.35s cubic-bezier(0.25,1,0.5,1), filter 0.35s ease',
+                  opacity: cycleVisible ? 1 : 0,
+                  transform: cycleVisible ? 'translateY(0px)' : 'translateY(-6px)',
+                  filter: cycleVisible ? 'blur(0px)' : 'blur(3px)',
+                  display: 'inline-block',
+                  textTransform: 'uppercase',
+                }}
+              >
+                · {CYCLE_WORDS[cycleIndex]}
+              </span>
+            </div>
+            {/* Hover/click: email */}
+            <div
+              className="absolute inset-0 flex items-center gap-2"
+              style={{
+                transition: 'transform 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.35s ease, filter 0.35s ease',
+                transform: showEmail ? 'translateY(0%)' : 'translateY(130%)',
+                opacity: showEmail ? 1 : 0,
+                filter: showEmail ? 'blur(0px)' : 'blur(5px)',
+              }}
+            >
+              <Mail size={11} className="text-amber-500 shrink-0" />
+              <span style={{ fontSize: '10px', fontWeight: 600, color: '#9f1239', letterSpacing: '-0.01em', whiteSpace: 'nowrap', flex: 1 }}>
+                decanode10@gmail.com
+              </span>
+              <a
+                href="https://mail.google.com/mail/?view=cm&to=decanode10@gmail.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 flex items-center justify-center rounded-md md:rounded-lg transition-all duration-200 hover:scale-110"
+                style={{ width: '20px', height: '20px', background: 'linear-gradient(135deg, #fbbf24, #f97316)', boxShadow: '0 2px 6px rgba(251,191,36,0.4)' }}
+                title="Send mail to DecaNode"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        );
+      })()}
+    </a>
     </>
   );
 }

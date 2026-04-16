@@ -3,6 +3,7 @@ import { User, Pencil, X, Save, Eye, EyeOff, Settings, AlertCircle, MapPin, Cred
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
 import Alert from './Alert';
+import PageLoader from './loading';
 import '../styles/componentstyles/userprofile.css';
 
 
@@ -58,6 +59,7 @@ export default function UserProfilePage() {
   const [pwForm, setPwForm]             = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [showPw, setShowPw]             = useState({ old: false, new: false, confirm: false });
   const [loading, setLoading]           = useState(true);
+  const [showLoader, setShowLoader]     = useState(true);
   const [saving, setSaving]             = useState(false);
   const [pwSaving, setPwSaving]         = useState(false);
   const [alert, setAlert]               = useState(null);
@@ -235,20 +237,16 @@ export default function UserProfilePage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  if (loading) {
-    return (
-      <div className="profile-container">
-        <Alert
-          type="loading"
-          title="Loading Profile"
-          message="Please wait while we fetch your details..."
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="profile-container">
+      {showLoader && (
+        <PageLoader
+          pageName="Profile"
+          isDataLoading={loading}
+          duration={1500}
+          onComplete={() => setShowLoader(false)}
+        />
+      )}
       <div className="profile-wrapper">
 
         {/* ── Header Card ───────────────────────────────────────────────── */}

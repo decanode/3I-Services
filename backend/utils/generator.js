@@ -66,4 +66,11 @@ const generateRandomCredentials = (firstName, fatherName, dob) => {
   return { generatedUserId, generatedPassword };
 };
 
-module.exports = { generateCredentials, generateRandomPassword, generateRandomCredentials };
+// Generate credentials for admin users: userId = firstName (lowercase) only
+const generateAdminCredentials = (firstName) => {
+  const generatedUserId = firstName ? firstName.toString().trim().toLowerCase() : 'admin';
+  const generatedPassword = generateRandomPassword();
+  return { generatedUserId, generatedPassword };
+};
+
+module.exports = { generateCredentials, generateRandomPassword, generateRandomCredentials, generateAdminCredentials };

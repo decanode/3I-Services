@@ -1,5 +1,5 @@
 const { auth } = require('../config/firebase');
-const { generateCredentials } = require('../utils/generator');
+const { generateAdminCredentials } = require('../utils/generator');
 const userService = require('../services/user');
 
 // Seed admin user
@@ -55,12 +55,7 @@ exports.seedAdmin = async (req, res) => {
     }
 
     // Generate credentials
-    const { generatedUserId, generatedPassword } = generateCredentials(
-      firstName, 
-      lastName, 
-      fatherName, 
-      dob
-    );
+    const { generatedUserId, generatedPassword } = generateAdminCredentials(firstName);
 
     // Create Firebase Auth user
     await auth.createUser({ 

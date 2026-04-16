@@ -293,9 +293,15 @@
 .ub__card--emp-id .ub__card-icon      { background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%); color: #b45309; }
 .ub__card--role .ub__card-icon        { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #0369a1; }
 .ub__card--manage .ub__card-icon      { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
-.ub__card--manage { 
-  cursor: pointer; 
-  margin: 0; 
+.ub__card--manage {
+  cursor: pointer;
+  margin: 0;
+  gap: 0.65rem;
+}
+.ub__card--profile .ub__card-icon     { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
+.ub__card--profile {
+  cursor: pointer;
+  margin: 0;
   gap: 0.65rem;
 }
 
@@ -820,6 +826,35 @@
   }
 
   .ub__cards-integrated .ub__card--manage .ub__card-value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  /* Profile card: same responsive layout as manage card */
+  .ub__cards-integrated .ub__card--profile {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2.5% 3.5%;
+    gap: 2.5%;
+  }
+
+  .ub__cards-integrated .ub__card--profile .ub__card-body {
+    width: 82%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .ub__cards-integrated .ub__card--profile .ub__card-label {
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  .ub__cards-integrated .ub__card--profile .ub__card-value {
     font-size: 1rem;
     font-weight: 800;
     color: #0f172a;

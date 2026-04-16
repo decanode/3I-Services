@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, UserPlus, Clock, Mail, Check, X, Trash2, IdCard, Shield, User as UserIcon, Bell, MapPin, BookMarked, IndianRupee, Database, FileCheck, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
@@ -574,6 +575,7 @@ export default function HomePage() {
 }
 
 function UserGreetingBanner({ user, stats, onEmployeeCardClick, isEmployeeCardExpanded, activeAdminList, pendingRequestCount = 0, onBellClick }) {
+  const navigate = useNavigate();
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';
   const role = user?.role || 'Employee';
   const idValue = user?.empId || user?.userId || 'N/A';
@@ -637,7 +639,7 @@ function UserGreetingBanner({ user, stats, onEmployeeCardClick, isEmployeeCardEx
             </div>
           </div>
 
-          {isAdmin && (
+          {isAdmin ? (
             <div
               className={`ub__card ub__card--manage ${isEmployeeCardExpanded ? 'ub__card--manage-active' : ''}`}
               onClick={onEmployeeCardClick}
@@ -649,6 +651,20 @@ function UserGreetingBanner({ user, stats, onEmployeeCardClick, isEmployeeCardEx
               <div className="ub__card-body">
                 <div className="ub__card-label">Manage</div>
                 <div className="ub__card-value">Employees</div>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="ub__card ub__card--profile"
+              onClick={() => navigate('/profile')}
+              role="button"
+              tabIndex={0}
+              onKeyPress={(e) => e.key === 'Enter' && navigate('/profile')}
+            >
+              <div className="ub__card-icon"><UserIcon size={28} /></div>
+              <div className="ub__card-body">
+                <div className="ub__card-label">My</div>
+                <div className="ub__card-value">Profile</div>
               </div>
             </div>
           )}

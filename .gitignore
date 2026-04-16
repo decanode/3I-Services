@@ -7,4 +7,3 @@ dist
 *.log
 package-lock.json
 frontend/public/cards/
-firestore.indexes.json
