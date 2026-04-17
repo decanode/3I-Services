@@ -28,8 +28,8 @@ export default function NotifyPage() {
   const fetchLedgerRemainders = useCallback(async (cursor) => {
     try {
       const url = cursor
-        ? `/api/ledger-remainder?limit=${PAGE_SIZE}&cursor=${cursor}`
-        : `/api/ledger-remainder?limit=${PAGE_SIZE}`;
+        ? `/api/ledger-remainder/paged?after=${encodeURIComponent(JSON.stringify(cursor))}`
+        : `/api/ledger-remainder/paged`;
       
       const res = await apiFetch(url);
 
