@@ -1,6 +1,6 @@
 // Verifies JWT from cookie, checks session cache, and attaches decoded user info to the request.
 const { verifyToken } = require('../utils/jwt');
-const { getSession } = require('../utils/sessionCache');
+const { getSession, setSession } = require('../utils/sessionCache');
 
 // Middleware to verify JWT cookie and validate active session in cache
 const authenticate = async (req, res, next) => {
@@ -17,11 +17,10 @@ const authenticate = async (req, res, next) => {
     // Step 2: Check the token exists in the session cache
     const cachedToken = getSession(decodedToken.userId);
     if (!cachedToken) {
-      return res.status(401).json({ message: 'Session expired or logged out' });
-    }
-
-    // Step 3: Confirm the cookie token matches the stored token
-    if (cachedToken !== token) {
+      // Cache was wiped (server restart / scale-out). Re-seed it from the valid JWT.
+      setSession(decodedToken.userId, token);
+    } else if (cachedToken !== token) {
+      // A newer login superseded this token (explicit logout on another device).
       return res.status(401).json({ message: 'Session superseded by a newer login' });
     }
 

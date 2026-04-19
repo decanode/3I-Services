@@ -425,7 +425,13 @@ export default function NotifyDetailPage() {
                   </div>
                   <div className="date-edit-controls">
                     <div className="interaction-datepicker-wrapper">
-                      <DatePicker value={editableDate} onChange={setEditableDate} flow="currentMonth" />
+                      <DatePicker
+                        value={editableDate}
+                        onChange={setEditableDate}
+                        flow="currentMonth"
+                        minDate={(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })()}
+                        maxDate={(() => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 10); return d; })()}
+                      />
                     </div>
                     <button
                       className="date-action-btn date-action-btn--save"

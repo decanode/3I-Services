@@ -490,7 +490,9 @@ export default function HomePage() {
   const [counterStats, setCounterStats] = useState(null);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const [activeAdminList, setActiveAdminList] = useState('employees');
-  const [initialLoading, setInitialLoading] = useState(isAdmin);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [adminReady, setAdminReady] = useState(!isAdmin); // employees skip admin fetch
+  const [statsReady, setStatsReady] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
 
   const handleBellClick = useCallback(() => {
@@ -511,6 +513,8 @@ export default function HomePage() {
         if (res.ok) setCounterStats(json.stats);
       } catch (e) {
         console.error('Failed to load counter stats:', e);
+      } finally {
+        setStatsReady(true);
       }
     };
     loadCounterStats();
@@ -529,14 +533,17 @@ export default function HomePage() {
         } catch (e) {
           console.error('Failed to load admin data:', e);
         } finally {
-          setInitialLoading(false);
+          setAdminReady(true);
         }
       };
       loadAdminData();
-    } else {
-      setInitialLoading(false);
     }
   }, [isAdmin]);
+
+  // Dismiss loader only after BOTH data sources have settled
+  useEffect(() => {
+    if (adminReady && statsReady) setInitialLoading(false);
+  }, [adminReady, statsReady]);
 
   return (
     <div className="hp">

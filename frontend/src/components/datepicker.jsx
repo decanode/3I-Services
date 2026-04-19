@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import '../styles/componentstyles/datepicker.css';
 
-const DatePicker = ({ value, onChange, required = false, disabled = false, variant = 'default', className = '', flow = 'default' }) => {
+const DatePicker = ({ value, onChange, required = false, disabled = false, variant = 'default', className = '', flow = 'default', minDate = null, maxDate = null }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -73,8 +73,34 @@ const DatePicker = ({ value, onChange, required = false, disabled = false, varia
     return days;
   };
 
+  const isDateDisabled = (date) => {
+    if (!date) return true;
+    const d = new Date(date); d.setHours(0, 0, 0, 0);
+    if (minDate) { const mn = new Date(minDate); mn.setHours(0, 0, 0, 0); if (d < mn) return true; }
+    if (maxDate) { const mx = new Date(maxDate); mx.setHours(0, 0, 0, 0); if (d > mx) return true; }
+    return false;
+  };
+
+  // True if the entire previous month is before minDate
+  const isPrevMonthBlocked = () => {
+    if (!minDate) return false;
+    const lastDayOfPrevMonth = new Date(currentYear, currentMonth, 0);
+    lastDayOfPrevMonth.setHours(0, 0, 0, 0);
+    const mn = new Date(minDate); mn.setHours(0, 0, 0, 0);
+    return lastDayOfPrevMonth < mn;
+  };
+
+  // True if the entire next month is after maxDate
+  const isNextMonthBlocked = () => {
+    if (!maxDate) return false;
+    const firstDayOfNextMonth = new Date(currentYear, currentMonth + 1, 1);
+    firstDayOfNextMonth.setHours(0, 0, 0, 0);
+    const mx = new Date(maxDate); mx.setHours(0, 0, 0, 0);
+    return firstDayOfNextMonth > mx;
+  };
+
   const handleDateSelect = (date) => {
-    if (!date) return;
+    if (!date || isDateDisabled(date)) return;
 
     setSelectedDate(date);
     const year = date.getFullYear();
@@ -214,21 +240,21 @@ const DatePicker = ({ value, onChange, required = false, disabled = false, varia
                   currentMonth === 0 ? (setCurrentMonth(11), setCurrentYear(currentYear - 1)) : setCurrentMonth(currentMonth - 1);
                 }}
                 aria-label="Previous month"
-                style={{ visibility: (showYearPicker || showMonthPicker) ? 'hidden' : 'visible' }}
+                style={{ visibility: (showYearPicker || showMonthPicker || isPrevMonthBlocked()) ? 'hidden' : 'visible' }}
               >
                 <ChevronLeft size={16} />
               </button>
 
-              <div 
-                className={`year-picker-trigger ${flow === 'currentMonth' ? 'pointer-events-none' : ''}`}
+              <div
+                className={`year-picker-trigger ${(flow === 'currentMonth' || minDate || maxDate) ? 'pointer-events-none' : ''}`}
                 onClick={() => {
-                  if (showYearPicker || showMonthPicker || flow === 'currentMonth') return;
+                  if (showYearPicker || showMonthPicker || flow === 'currentMonth' || minDate || maxDate) return;
                   setShowYearPicker(true);
                   setShowMonthPicker(false);
                 }}
               >
                 {monthNames[currentMonth]} {currentYear}
-                {flow !== 'currentMonth' && <ChevronDown size={14} />}
+                {flow !== 'currentMonth' && !minDate && !maxDate && <ChevronDown size={14} />}
               </div>
 
               <button
@@ -239,7 +265,7 @@ const DatePicker = ({ value, onChange, required = false, disabled = false, varia
                   currentMonth === 11 ? (setCurrentMonth(0), setCurrentYear(currentYear + 1)) : setCurrentMonth(currentMonth + 1);
                 }}
                 aria-label="Next month"
-                style={{ visibility: (showYearPicker || showMonthPicker) ? 'hidden' : 'visible' }}
+                style={{ visibility: (showYearPicker || showMonthPicker || isNextMonthBlocked()) ? 'hidden' : 'visible' }}
               >
                 <ChevronRight size={16} />
               </button>
@@ -313,16 +339,17 @@ const DatePicker = ({ value, onChange, required = false, disabled = false, varia
                       {Array.from({ length: 7 }).map((__, dayIndex) => {
                         const date = days[weekIndex * 7 + dayIndex];
                         const isOutside = !date;
+                        const isDisabled = isOutside || isDateDisabled(date);
                         return (
                           <td key={dayIndex}>
                             <button
                               type="button"
                               role="gridcell"
                               onClick={() => handleDateSelect(date)}
-                              disabled={isOutside}
+                              disabled={isDisabled}
                               data-selected={isSelected(date)}
                               data-today={isToday(date)}
-                              data-disabled={isOutside}
+                              data-disabled={isDisabled}
                               data-outside-month={isOutside}
                             >
                               {date ? date.getDate() : ''}

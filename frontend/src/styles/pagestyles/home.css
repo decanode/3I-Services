@@ -300,6 +300,7 @@
 }
 .ub__card--profile .ub__card-icon     { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
 .ub__card--profile {
+  display: flex;
   cursor: pointer;
   margin: 0;
   gap: 0.65rem;

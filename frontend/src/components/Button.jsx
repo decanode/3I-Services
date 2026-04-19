@@ -366,7 +366,7 @@ export const AddCustomerButton = ({ onClick, disabled = false, className = '', t
 // Back Button Component
 export const BackButton = ({ onClick, className = '', title = 'Go Back', size = 'medium', showLabel = false }) => {
   return (
-    <button 
+    <button
       className={`btn btn-back btn-${size} ${showLabel ? 'btn-back--with-label' : ''} ${className}`}
       onClick={onClick}
       type="button"

@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useMasterData } from '../hooks/useMasterData';
+import { apiFetch } from '../utils/api';
 // import { useUpdateLedger } from '../hooks/useUpdateLedger'; // wire up when inline editing is added
 import Table from '../components/Table';
 import { Pagination, SearchBar, Button, ExpandColumnsButton } from '../components/Button';
@@ -19,6 +20,8 @@ function formatCell(value) {
 export default function ViewDataPage() {
   const navigate = useNavigate();
   const [showLoader, setShowLoader] = useState(true);
+  const [rowAlert, setRowAlert] = useState(null);
+  const [checkingRow, setCheckingRow] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isColumnsExpanded, setIsColumnsExpanded] = useState(false);
 
@@ -35,8 +38,8 @@ export default function ViewDataPage() {
   // const { mutate: updateLedger } = useUpdateLedger(currentCursor);
   // updateLedger({ ledger_id, payload: { nextCallDate, lastComments } })
 
-  const rows       = data?.rows    ?? [];
-  const columns    = data?.columns ?? [];
+  const rows = data?.rows ?? [];
+  const columns = data?.columns ?? [];
   const nextCursor = data?.nextCursor ?? null;
 
   // Define default visible columns
@@ -140,6 +143,24 @@ export default function ViewDataPage() {
     );
   }, [rows, columns, searchQuery]);
 
+  const handleRowClick = useCallback(async (row) => {
+    if (!row.ledger_id || checkingRow) return;
+    setCheckingRow(true);
+    try {
+      const res = await apiFetch(`/api/ledger-remainder/${encodeURIComponent(row.ledger_id)}`);
+      if (res.ok) {
+        const data = await res.json();
+        navigate('/view-notify-detail', { state: { row: data.row } });
+      } else {
+        setRowAlert({ type: 'error', title: 'Not Found', message: `No outstanding record found for "${row.ledger || row.ledger_id}".` });
+      }
+    } catch {
+      setRowAlert({ type: 'error', title: 'Error', message: 'Failed to check outstanding record.' });
+    } finally {
+      setCheckingRow(false);
+    }
+  }, [checkingRow, navigate]);
+
   const showTable = !isLoading && !isError && columns.length > 0;
 
   return (
@@ -159,7 +180,7 @@ export default function ViewDataPage() {
           title="Load Failed"
           message={error?.message || 'Failed to load master data'}
           onConfirm={() => refetch()}
-          onCancel={() => {}}
+          onCancel={() => { }}
         />
       )}
 
@@ -203,6 +224,7 @@ export default function ViewDataPage() {
               headerGradient
               defaultAlign="center"
               noDataMessage="No records in Excel_master yet. Upload a file from Excel."
+              onRowClick={handleRowClick}
             />
           </div>
           <Pagination
@@ -213,6 +235,16 @@ export default function ViewDataPage() {
             onNext={goNext}
           />
         </div>
+      )}
+
+      {rowAlert && (
+        <Alert
+          type={rowAlert.type}
+          title={rowAlert.title}
+          message={rowAlert.message}
+          onConfirm={() => setRowAlert(null)}
+          onCancel={() => setRowAlert(null)}
+        />
       )}
     </div>
   );

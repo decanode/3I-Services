@@ -107,4 +107,12 @@
   z-index: 2;
 }
 
+/* Clickable row hover effect */
+.view-master-reusable-table tbody tr {
+  transition: background-color 0.15s ease;
+}
 
+.view-master-reusable-table tbody tr:hover {
+  background-color: rgba(42, 71, 89, 0.06);
+  cursor: pointer;
+}
