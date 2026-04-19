@@ -133,6 +133,8 @@ class OutstandingService {
         const newDebit = parseFloat(record.debit || 0) || 0;
         const newCredit = parseFloat(record.credit || 0) || 0;
         const newComments = String(record.comments || '').trim();
+        const rawCat = parseInt(record.category, 10);
+        const newCategory = (rawCat >= 1 && rawCat <= 6) ? rawCat : null;
 
         // Find the ledger in Outstanding_Remainder for updating
         const ledgerSnapshot = await db
@@ -156,6 +158,7 @@ class OutstandingService {
             email: masterData.email || '',
             debit: newDebit,
             credit: newCredit,
+            category: newCategory ?? 5,
             nextCallDate: '',
             lastComments: newComments || '',
             lastTransactionDate: parsedDate || '',
@@ -236,6 +239,11 @@ class OutstandingService {
         
         // Always store comments (even if empty)
         updateData.lastComments = newComments;
+
+        // Preserve existing category when Excel cell is blank/invalid
+        if (newCategory !== null) {
+          updateData.category = newCategory;
+        }
 
         await ledgerRef.update(updateData);
 

@@ -65,8 +65,8 @@ env:
   - variable: JWT_SECRET
     secret: projects/693049807057/secrets/JWT_SECRET
 
-  - variable: EMAIL_USER_DEV
-    secret: projects/693049807057/secrets/EMAIL_USER_DEV
+  - variable: EMAIL_USER
+    secret: projects/693049807057/secrets/EMAIL_USER/versions/2
 
   - variable: EMAIL_PASSWORD
-    secret: projects/693049807057/secrets/EMAIL_PASSWORD_DEV
+    secret: projects/693049807057/secrets/EMAIL_PASSWORD/versions/2

@@ -89,6 +89,12 @@ export default function ViewOutstandingsPage() {
       align: 'center',
       render: (item) => formatDate(item.nextCallDate),
     },
+    {
+      key: 'category',
+      label: 'Category',
+      width: '120px',
+      align: 'center',
+    },
   ], []);
 
   return (

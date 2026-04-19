@@ -251,7 +251,7 @@ export default function ViewLogPage() {
       key: 'timestamp',
       label: 'Created At',
       width: '8%',
-      align: 'center',
+      align: 'left',
       render: (item) => <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>
         {new Date(item.timestamp).toLocaleString('en-IN', {
           year: 'numeric', month: 'short', day: 'numeric',
@@ -270,14 +270,14 @@ export default function ViewLogPage() {
       key: 'createdByUserId',
       label: 'User ID',
       width: '8%',
-      align: 'center',
+      align: 'left',
       render: (item) => <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>{item.createdByUserId || '-'}</span>
     },
     {
       key: 'operation',
       label: 'Type',
       width: '8%',
-      align: 'center',
+      align: 'left',
       render: (item) => (
         <span style={{
           fontSize: '0.75rem',
@@ -319,7 +319,7 @@ export default function ViewLogPage() {
       key: 'nextCallDate',
       label: 'Next Call Date',
       width: '12%',
-      align: 'center',
+      align: 'left',
       highlightKey: 'nextCallDate',
       render: (item) => (
         <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>

@@ -669,7 +669,9 @@ export default function LoginPage() {
       {/* Top Right Toggle Button */}
       <button
         onClick={() => setActivePanel(activePanel ? null : 'login')}
-        className="absolute top-6 right-6 md:top-8 md:right-10 z-[60] text-rose-900 font-bold text-lg md:text-xl tracking-wide hover:text-rose-600 transition-colors"
+        className={`absolute top-6 right-6 md:top-8 md:right-10 z-[60] text-rose-900 font-bold text-lg md:text-xl tracking-wide hover:text-rose-600 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] ${
+          activePanel === 'signup' ? 'md:-translate-x-[430px]' : 'translate-x-0'
+        }`}
       >
         {activePanel ? 'CLOSE' : 'LOGIN'}
       </button>
@@ -986,18 +988,18 @@ export default function LoginPage() {
         100% { background-position:  200% center; }
       }
       @keyframes dn-glow-pulse {
-        0%, 100% { box-shadow: 0 2px 14px rgba(136,19,55,0.10), 0 0 0 1px rgba(251,191,36,0.18); }
-        50%       { box-shadow: 0 4px 22px rgba(136,19,55,0.22), 0 0 0 1px rgba(251,191,36,0.40); }
+        0%, 100% { box-shadow: 0 4px 20px rgba(127,29,29,0.18), 0 1px 4px rgba(0,0,0,0.08); }
+        50%       { box-shadow: 0 6px 28px rgba(127,29,29,0.28), 0 1px 6px rgba(0,0,0,0.12); }
       }
       .dn-brand {
-        background: linear-gradient(90deg, #881337 0%, #c2410c 30%, #fbbf24 50%, #c2410c 70%, #881337 100%);
+        background: linear-gradient(90deg, #be123c 0%, #c2410c 35%, #b45309 55%, #c2410c 75%, #be123c 100%);
         background-size: 200% auto;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         animation: dn-shimmer 2.4s linear infinite;
         font-weight: 900;
-        letter-spacing: -0.03em;
+        letter-spacing: -0.02em;
         line-height: 1;
         white-space: nowrap;
       }
@@ -1010,36 +1012,48 @@ export default function LoginPage() {
       onClick={handleEmailCardClick}
       onMouseEnter={() => setEmailCardHovered(true)}
       onMouseLeave={() => setEmailCardHovered(false)}
-      className="dn-card fixed bottom-3 right-3 md:bottom-5 md:right-5 z-[100] flex items-center px-3 md:px-5 rounded-xl md:rounded-2xl backdrop-blur-md bg-white/80 border border-amber-200/30 cursor-pointer select-none no-underline overflow-hidden w-[230px] md:w-[260px]"
-      style={{ height: '32px' }}
+      className={`dn-card fixed bottom-4 z-[100] flex items-center px-4 md:px-5 rounded-xl md:rounded-2xl cursor-pointer select-none no-underline overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]
+        left-0 right-0 mx-auto md:mx-0 md:left-auto md:right-5 md:bottom-5
+        w-[82%] md:w-[280px] ${
+        activePanel !== null ? 'max-md:opacity-0 max-md:pointer-events-none max-md:translate-y-10' : ''
+      } ${
+        activePanel === 'signup' ? 'md:-translate-x-[460px]' : 'translate-x-0'
+      }`}
+      style={{
+        height: '38px',
+        background: 'rgba(255,255,255,0.97)',
+        border: '1px solid rgba(190,18,60,0.14)',
+        backdropFilter: 'blur(12px)',
+      }}
     >
       {(() => {
         const showEmail = emailCardHovered || emailCardClicked;
         return (
           <div className="relative w-full h-full flex items-center">
-            {/* Default: created by DecaNode */}
+            {/* Default: powered by DecaNode */}
             <div
-              className="absolute inset-0 flex items-center gap-2"
+              className="absolute inset-0 flex items-center"
               style={{
+                gap: '10px',
+                padding: '0 6px',
                 transition: 'transform 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.35s ease, filter 0.35s ease',
                 transform: showEmail ? 'translateY(-130%)' : 'translateY(0%)',
                 opacity: showEmail ? 0 : 1,
                 filter: showEmail ? 'blur(5px)' : 'blur(0px)',
               }}
             >
-              <span className="text-amber-400 leading-none shrink-0" style={{ fontSize: '10px' }}>✦</span>
-              <span style={{ fontSize: '10px', fontWeight: 500, color: '#be123c', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
-                created by&nbsp;
+              <Zap size={11} style={{ color: '#f97316', flexShrink: 0 }} />
+              <span style={{ fontSize: '10px', fontWeight: 600, color: '#9f1239', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                powered by
               </span>
-              <span className="dn-brand" style={{ fontSize: '13px' }}>DecaNode</span>
+              <span className="dn-brand" style={{ fontSize: '14px' }}>DecaNode</span>
               <span
                 style={{
                   fontSize: '10px',
                   fontWeight: 700,
                   color: '#b45309',
-                  letterSpacing: '0.04em',
+                  letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
-                  marginLeft: '4px',
                   transition: 'opacity 0.35s ease, transform 0.35s cubic-bezier(0.25,1,0.5,1), filter 0.35s ease',
                   opacity: cycleVisible ? 1 : 0,
                   transform: cycleVisible ? 'translateY(0px)' : 'translateY(-6px)',
@@ -1053,7 +1067,7 @@ export default function LoginPage() {
             </div>
             {/* Hover/click: email */}
             <div
-              className="absolute inset-0 flex items-center gap-2"
+              className="absolute inset-0 flex items-center gap-1.5 sm:gap-2"
               style={{
                 transition: 'transform 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.35s ease, filter 0.35s ease',
                 transform: showEmail ? 'translateY(0%)' : 'translateY(130%)',
@@ -1061,8 +1075,8 @@ export default function LoginPage() {
                 filter: showEmail ? 'blur(0px)' : 'blur(5px)',
               }}
             >
-              <Mail size={11} className="text-amber-500 shrink-0" />
-              <span style={{ fontSize: '10px', fontWeight: 600, color: '#9f1239', letterSpacing: '-0.01em', whiteSpace: 'nowrap', flex: 1 }}>
+              <Mail size={11} style={{ color: '#be123c', flexShrink: 0 }} />
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#881337', letterSpacing: '-0.01em', whiteSpace: 'nowrap', flex: 1 }}>
                 decanode10@gmail.com
               </span>
               <a
@@ -1070,8 +1084,8 @@ export default function LoginPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="shrink-0 flex items-center justify-center rounded-md md:rounded-lg transition-all duration-200 hover:scale-110"
-                style={{ width: '20px', height: '20px', background: 'linear-gradient(135deg, #fbbf24, #f97316)', boxShadow: '0 2px 6px rgba(251,191,36,0.4)' }}
+                className="shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 hover:scale-110"
+                style={{ width: '22px', height: '22px', background: 'linear-gradient(135deg, #be123c, #9f1239)', boxShadow: '0 2px 8px rgba(190,18,60,0.4)' }}
                 title="Send mail to DecaNode"
               >
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

@@ -39,6 +39,7 @@ function normalizeOutstandingHeader(header) {
     'credit': 'credit',
     'cr': 'credit',
     'creditamt': 'credit',
+    'category': 'category',
     'seri': null, // Ignore serial column
     'serial': null,
     'sr': null,

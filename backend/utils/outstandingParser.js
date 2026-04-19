@@ -60,6 +60,7 @@ function parseOutstandingBuffer(buffer) {
       credit: 3,
       date: 4,
       comments: 5,
+      category: 6,
     };
 
     let lastRecognizedRow = -1;
@@ -171,6 +172,7 @@ function parseOutstandingBuffer(buffer) {
         lower === 'credit' ||
         lower === 'date' ||
         lower === 'comments' ||
+        lower === 'category' ||
         lower.includes('serialledger') ||
         lower.includes('ledgeraccounts')
       ) {
@@ -297,6 +299,7 @@ function parseOutstandingBuffer(buffer) {
         credit: 0,
         date: '',
         comments: '',
+        category: '',
       };
 
       for (let c = 0; c < row.length; c++) {
@@ -312,6 +315,8 @@ function parseOutstandingBuffer(buffer) {
         if (field === 'debit' || field === 'credit') {
           const numValue = parseFloat(stringValue);
           entry[field] = isNaN(numValue) ? 0 : numValue;
+        } else if (field === 'category') {
+          entry[field] = stringValue; // kept raw; service validates 1–6
         } else {
           entry[field] = stringValue;
         }
