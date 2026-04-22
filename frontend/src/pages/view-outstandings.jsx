@@ -56,6 +56,12 @@ export default function ViewOutstandingsPage() {
       align: 'center',
     },
     {
+      key: 'category',
+      label: 'Category',
+      width: '160px',
+      align: 'center',
+    },
+    {
       key: 'debit',
       label: 'Debit',
       width: '150px',
