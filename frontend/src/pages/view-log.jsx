@@ -18,6 +18,7 @@ const isFieldUpdated = (item, fieldName) => {
     if (fieldName === 'lcredit') return item.lcredit > 0;
     if (fieldName === 'nextCallDate') return !!item.nextCallDate;
     if (fieldName === 'comments') return !!item.comments;
+    if (fieldName === 'category') return !!item.category;
     return false;
   }
   return Array.isArray(item.updatedFields) && item.updatedFields.includes(fieldName);
@@ -250,9 +251,8 @@ export default function ViewLogPage() {
     {
       key: 'timestamp',
       label: 'Created At',
-      width: '8%',
-      minWidth: '6%',
-      maxWidth: '12%',
+      minWidth: '7%',
+      maxWidth: '14%',
       align: 'left',
       render: (item) => <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>
         {new Date(item.timestamp).toLocaleString('en-IN', {
@@ -264,47 +264,24 @@ export default function ViewLogPage() {
     {
       key: 'ledger_name',
       label: 'Ledger Name',
-      width: '14%',
-      minWidth: '10%',
-      maxWidth: '20%',
+      minWidth: '6%',
+      maxWidth: '15%',
       align: 'left',
       render: (item) => <span style={{ fontSize: '0.9rem', color: '#1f2937', fontWeight: 500 }}>{item.ledger_name || '—'}</span>
     },
     {
       key: 'createdByUserId',
       label: 'User ID',
-      width: '8%',
       minWidth: '5%',
       maxWidth: '12%',
       align: 'left',
       render: (item) => <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>{item.createdByUserId || '-'}</span>
     },
     {
-      key: 'operation',
-      label: 'Type',
-      width: '8%',
-      minWidth: '5%',
-      maxWidth: '10%',
-      align: 'left',
-      render: (item) => (
-        <span style={{
-          fontSize: '0.75rem',
-          padding: '2px 8px',
-          borderRadius: '12px',
-          backgroundColor: item.operation === 'insert' ? '#dcfce7' : '#dbeafe',
-          color: item.operation === 'insert' ? '#166534' : '#1e40af',
-          fontWeight: 500,
-        }}>
-          {item.operation === 'insert' ? 'New' : 'Update'}
-        </span>
-      )
-    },
-    {
       key: 'ldebit',
       label: 'Debit',
-      width: '8%',
-      minWidth: '6%',
-      maxWidth: '12%',
+      minWidth: '4%',
+      maxWidth: '9%',
       align: 'center',
       highlightKey: 'ldebit',
       render: (item) => {
@@ -314,25 +291,22 @@ export default function ViewLogPage() {
       }
     },
     {
-      key: 'lcredit',
-      label: 'Credit',
-      width: '8%',
-      minWidth: '6%',
-      maxWidth: '12%',
+      key: 'category',
+      label: 'Category',
+      minWidth: '3%',
+      maxWidth: '3%',
       align: 'center',
-      highlightKey: 'lcredit',
-      render: (item) => {
-        return item.lcredit > 0
-          ? <span style={{ color: '#dc2626', fontWeight: 600 }}>{item.lcredit.toFixed(2)}</span>
+      render: (item) => (
+        item.category
+          ? <span style={{ fontSize: '0.85rem', color: '#1f2937', fontWeight: 500 }}>{item.category}</span>
           : <span style={{ color: '#d1d5db' }}>—</span>
-      }
+      )
     },
     {
       key: 'nextCallDate',
       label: 'Next Call Date',
-      width: '12%',
-      minWidth: '8%',
-      maxWidth: '16%',
+      minWidth: '6%',
+      maxWidth: '10%',
       align: 'left',
       highlightKey: 'nextCallDate',
       render: (item) => (
@@ -344,7 +318,6 @@ export default function ViewLogPage() {
     {
       key: 'comments',
       label: 'Comments',
-      width: '34%',
       minWidth: '20%',
       maxWidth: '45%',
       align: 'left',

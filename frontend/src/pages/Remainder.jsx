@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, FileText, MapPin, MessageSquare, AlertCircle, RefreshCw, ChevronRight, ArrowRight, TrendingDown, TrendingUp } from 'lucide-react';
+import { Calendar, FileText, MapPin, MessageSquare, AlertCircle, RefreshCw, ChevronRight, ArrowRight, TrendingDown, TrendingUp, Tag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
 import Alert from '../components/Alert';
@@ -33,6 +33,12 @@ function getDayLabel(offset) {
   if (offset === 0) return 'Today';
   if (offset === 1) return 'Tomorrow';
   return `In ${offset} days`;
+}
+
+function getLatestComment(lastComments) {
+  if (!lastComments) return null;
+  if (Array.isArray(lastComments)) return lastComments[lastComments.length - 1]?.text || null;
+  return typeof lastComments === 'string' ? lastComments : null;
 }
 
 async function fetchUpcoming(days = 7, limit = '') {
@@ -95,24 +101,20 @@ export function RemainderCard() {
           )}
           {!loading && !error && items.length > 0 && visible.map((item, idx) => {
             const offset = getDayOffset(item.nextCallDate);
+            const comment = getLatestComment(item.lastComments);
             return (
               <div key={`${item.id ?? item.ledger_id}-${idx}`} className={`rc__item${offset === 0 ? ' rc__item--today' : ''}`} onClick={() => navigate('/view-notify-detail', { state: { row: item } })} style={{ cursor: 'pointer' }}>
                 <div className={`rc__date-badge${offset === 0 ? ' rc__date-badge--today' : ''}`}>
                   <span>{formatDate(item.nextCallDate)}</span>
                   {getDayLabel(offset) && <span className="rc__day-label">{getDayLabel(offset)}</span>}
                 </div>
-                <span className="rc__name">{item.ledger_name || '—'}</span>
-                <div className="rc__amounts">
-                  {formatCurrency(item.debit) && (
-                    <span className="rc__amt rc__amt--debit">
-                      <TrendingDown size={13} /> {formatCurrency(item.debit)}
-                    </span>
-                  )}
-                  {formatCurrency(item.credit) && (
-                    <span className="rc__amt rc__amt--credit">
-                      <TrendingUp size={13} /> {formatCurrency(item.credit)}
-                    </span>
-                  )}
+                <div className="rc__item-mid">
+                  <span className="rc__name">{item.ledger_name || '—'}</span>
+                  <div className="rc__item-chips">
+                    {item.category && <span className="rc__category">Cat: {item.category}</span>}
+                    {comment && (<span className="rc__comment">{comment}</span>)}
+                    {formatCurrency(item.debit) && ( <span className="rc__amt rc__amt--debit"> <TrendingDown size={13} /> {formatCurrency(item.debit)} </span>)}
+                  </div>
                 </div>
               </div>
             );
@@ -248,14 +250,15 @@ export default function RemainderPage() {
                           <div className="rp__item-meta">
                             {item.city && <span><MapPin size={12} /> {item.city}</span>}
                             {item.group && item.group !== '-' && <span><FileText size={12} /> {item.group}</span>}
+                            {item.category && <span className="rp__item-cat"><Tag size={11} /> Cat {item.category}</span>}
                           </div>
                         </div>
 
                         {/* Center */}
-                        {item.lastComments && (
+                        {getLatestComment(item.lastComments) && (
                           <div className="rp__item-comment">
                             <MessageSquare size={14} />
-                            <p>{item.lastComments}</p>
+                            <p>{getLatestComment(item.lastComments)}</p>
                           </div>
                         )}
 

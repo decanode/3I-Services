@@ -173,6 +173,7 @@ exports.update = async (req, res) => {
           ledger_id: ledgerData.ledger_id,
           ledger_name: ledgerData.ledger_name,
           group: ledgerData.group,
+          category: ledgerData.category,
           ldebit: ledgerData.debit || 0,
           lcredit: ledgerData.credit || 0,
           nextCallDate: nextCallDate || '',

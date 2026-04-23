@@ -305,9 +305,6 @@ export default function Alert({
                 </p>
               </div>
             </div>
-            {progress < 100 && (
-              <span className="alert-progress-badge">{progress}%</span>
-            )}
           </div>
 
           <div className="alert-file-card">
