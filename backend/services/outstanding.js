@@ -284,8 +284,10 @@ class OutstandingService {
           updateData.lastTransactionDate = parsedDate;
         }
 
-        // Always overwrite comments (empty string is a valid clear-down)
-        updateData.lastComments = newComments;
+        // Only overwrite comments when Excel cell had content; blank preserves existing manual comments
+        if (newComments !== '') {
+          updateData.lastComments = newComments;
+        }
 
         // CATEGORY update rules:
         //  • blank cell  → newCategory=null → field NOT added → DB value preserved
@@ -302,7 +304,8 @@ class OutstandingService {
         const changedFields = [];
         if (newDebit !== previousDebit) changedFields.push('ldebit');
         if (newCredit !== previousCredit) changedFields.push('lcredit');
-        if (newComments !== previousComments) changedFields.push('comments');
+        if (newComments !== '' && newComments !== previousComments) changedFields.push('comments');
+        if (categoryWillChange) changedFields.push('category');
 
         logsToCreate.push({
           ledger_id: ledgerId,
@@ -311,9 +314,9 @@ class OutstandingService {
           category: newCategory ?? ledgerData.category,
           ldebit: newDebit,
           lcredit: newCredit,
-          nextCallDate: '',
+          nextCallDate: ledgerData.nextCallDate || '',
           date: parsedDate || String(record.date || '').trim(),
-          comments: newComments,
+          comments: newComments || ledgerData.lastComments || '',
           // Label as 'insert' when the record had zero balances before (first meaningful entry)
           operation: (previousDebit === 0 && previousCredit === 0) ? 'insert' : 'update',
           updatedFields: changedFields,

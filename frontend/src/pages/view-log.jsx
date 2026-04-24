@@ -18,7 +18,7 @@ const isFieldUpdated = (item, fieldName) => {
     if (fieldName === 'lcredit') return item.lcredit > 0;
     if (fieldName === 'nextCallDate') return !!item.nextCallDate;
     if (fieldName === 'comments') return !!item.comments;
-    if (fieldName === 'category') return !!item.category;
+    if (fieldName === 'category') return item.category != null && item.category > 0;
     return false;
   }
   return Array.isArray(item.updatedFields) && item.updatedFields.includes(fieldName);
@@ -30,6 +30,7 @@ const highlightColors = {
   lcredit: { backgroundColor: '#fee2e2' },     // red tint
   nextCallDate: { backgroundColor: '#dbeafe' }, // blue tint
   comments: { backgroundColor: '#fef3c7' },    // amber tint
+  category: { backgroundColor: '#f3e8ff' },   // purple tint
 };
 
 export default function ViewLogPage() {
@@ -291,6 +292,7 @@ export default function ViewLogPage() {
       label: 'Category',
       width: '10%',
       align: 'center',
+      highlightKey: 'category',
       render: (item) => (
         item.category
           ? <span style={{ fontSize: '0.85rem', color: '#1f2937', fontWeight: 500 }}>{item.category}</span>
