@@ -547,7 +547,7 @@ export default function HomePage() {
         <PageLoader
           pageName="Dashboard"
           isDataLoading={initialLoading}
-          duration={2000}
+          duration={500}
           onComplete={() => setShowLoader(false)}
         />
       )}

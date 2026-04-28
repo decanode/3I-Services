@@ -243,7 +243,7 @@ export default function UserProfilePage() {
         <PageLoader
           pageName="Profile"
           isDataLoading={loading}
-          duration={1500}
+          duration={500}
           onComplete={() => setShowLoader(false)}
         />
       )}

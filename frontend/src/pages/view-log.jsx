@@ -414,7 +414,7 @@ export default function ViewLogPage() {
         <PageLoader
           pageName="Activity Logs"
           isDataLoading={loading}
-          duration={1500}
+          duration={500}
           onComplete={() => setShowLoader(false)}
         />
       )}

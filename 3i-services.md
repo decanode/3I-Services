@@ -1,8 +1,8 @@
 # 3i Services CRM — Complete Application Documentation
 
 ```
-VERSION: 1.2
-LAST_UPDATED: 2026-04-16
+VERSION: 1.3
+LAST_UPDATED: 2026-04-28
 PURPOSE: Human-readable and AI-parseable reference for all function flows,
          data models, API endpoints, security rules, and frontend interactions.
 
@@ -80,8 +80,13 @@ AI_PARSING_NOTES:
     - [Flow 5: Password Reset via OTP](#flow-5-password-reset-via-otp)
     - [Flow 6: Admin Dashboard Load](#flow-6-admin-dashboard-load)
     - [Flow 7: Export Ledger Logs to Excel](#flow-7-export-ledger-logs-to-excel)
+    - [Flow 8: User Logout](#flow-8-user-logout)
+    - [Flow 9: Counter / Stats Load](#flow-9-counter--stats-load)
+    - [Flow 10: User Profile Update & Password Change](#flow-10-user-profile-update--password-change)
+    - [Flow 11: Admin Toggle User Active / Delete User](#flow-11-admin-toggle-user-active--delete-user)
 15. [Deployment](#15-deployment)
 16. [Error Code Reference](#16-error-code-reference)
+17. [Runtime Configuration & Performance](#17-runtime-configuration--performance)
 
 ---
 
@@ -3157,6 +3162,157 @@ Step 5: Stream Excel buffer to response
 
 ---
 
+### Flow 8: User Logout
+
+```
+Step 1: User clicks "Logout" button (sidebar or profile page)
+  → AuthContext.logout()
+  → DELETE /api/auth/logout
+
+Step 2: Backend auth.controller.logout
+  → verifyJwt middleware validates cookie first (requires valid session)
+  → sessionCache.clearSession(req.user.userId)
+      → removes userId → token entry from NodeCache Map
+  → res.clearCookie('token')
+      → instructs browser to delete the HttpOnly cookie
+  → Response: { message: 'Logged out successfully' }
+
+Step 3: Frontend receives 200
+  → AuthContext clears user from localStorage
+  → navigate('/login')
+
+NOTES:
+  - After logout, any replayed cookie is rejected: token no longer in session cache
+  - Server restart also clears session cache (all users effectively logged out)
+  - Single active session per user: new login from a second device replaces the cache entry,
+    invalidating the first device's session on their next request
+```
+
+---
+
+### Flow 9: Counter / Stats Load
+
+```
+Step 1: Any authenticated user navigates to /home
+  → GET /api/counter/stats
+
+Step 2: counter.controller.getStats
+  → counterService.getStats()
+  → Firestore 'counters' ← read single document with ID 'app_stats'
+  → returns: {
+      totalLedgers,       total master ledger count
+      totalOutstanding,   total Outstanding_Remainder records
+      totalDebit,         aggregate debit across all outstanding records
+      totalCredit,        aggregate credit across all outstanding records
+      totalUsers,         total user count (admin + employee)
+      pendingRequests,    count of status:'pending' in 'requests'
+      totalLogs           total Ledger_logs count
+    }
+
+Step 3: Response: { stats: { ... } }
+
+Step 4: Frontend renders stats on /home dashboard
+  → Admin sees all 7 metrics
+  → Employee sees subset (totalLedgers, totalOutstanding, totalDebit, totalCredit)
+
+NOTE: Counter values are maintained by individual service operations:
+  - excelMasterService.bulkInsert() increments totalLedgers + totalOutstanding
+  - outstanding.processOutstandingRecords() updates totalDebit + totalCredit
+  - userService.createUser() increments totalUsers
+  - registrationService.createRequest() / deleteRequest() maintains pendingRequests
+  - ledgerLogsService.addLog() increments totalLogs
+```
+
+---
+
+### Flow 10: User Profile Update & Password Change
+
+```
+── Profile Update ──
+
+Step 1: User at /profile edits their details
+  → PUT /api/user/update
+    { firstName, lastName, fatherName, dob, phone, countryCode, adminNumber }
+
+Step 2: user.controller.updateUser
+  → reads req.user.userId from JWT (cannot change own userId/email/role)
+  → validates phone (10 digits) if provided
+  → userService.updateUser(userId, fields)
+      → Firestore 'users' ← updates only supplied fields (partial update)
+  → Response: { message: 'Profile updated', user: updatedDoc }
+
+Step 3: Frontend updates localStorage via AuthContext if firstName changed
+  → sidebar and header reflect new name immediately
+
+── Password Change ──
+
+Step 1: User at /profile fills password change form
+  → PUT /api/user/change-password
+    { oldPassword, newPassword, confirmPassword }
+
+Step 2: password.controller.changePassword (or user.controller)
+  → userService.findByUserId(userId) → get email + Firebase uid
+  → Firebase REST: verifyPassword(email, oldPassword)
+      → returns 400 'INVALID_PASSWORD' if wrong
+  → Validate:
+      newPassword.length >= 6
+      newPassword !== oldPassword
+      newPassword === confirmPassword
+  → admin.auth().updateUser(uid, { password: newPassword })
+      → password changed in Firebase Authentication
+  → NO Firestore write (password not stored in 'users' collection)
+  → Response: { message: 'Password changed successfully' }
+
+NOTE: Old Firebase sessions remain valid until their JWT_EXPIRES_IN window expires.
+      Logout after password change is recommended for security.
+```
+
+---
+
+### Flow 11: Admin Toggle User Active / Delete User
+
+```
+── Toggle isActive ──
+
+Step 1: Admin at /home sees employee card
+  → clicks "Disable" (or "Enable") toggle button
+  → PUT /api/admin/toggle-user/:userId
+
+Step 2: adminDashboard.controller.toggleUser
+  → verifyJwt + requireAdmin middleware (401/403 if not admin)
+  → userService.findByUserId(userId)        — fetch current isActive state
+  → userService.updateUser(userId, { isActive: !currentIsActive })
+      → Firestore 'users' ← isActive field flipped
+  → Response: { message, isActive: newValue }
+
+Step 3: Effect on disabled user
+  → Next login attempt: user.controller.login checks isActive
+      → if false: Response 403 'Account is disabled. Contact admin.'
+  → Existing JWT session: continues until expiry (JWT_EXPIRES_IN = 60m)
+      → Force-logout by calling sessionCache.clearSession(userId) if needed
+
+── Delete User ──
+
+Step 1: Admin clicks "Delete" on employee card
+  → DELETE /api/admin/user/:userId
+
+Step 2: adminDashboard.controller.deleteUser
+  → verifyJwt + requireAdmin middleware
+  → userService.findByUserId(userId)        — verify user exists
+  → admin.auth().deleteUser(firebaseUid)    — remove from Firebase Authentication
+  → userService.deleteUser(userId)
+      → Firestore 'users' ← document deleted
+  → Response: { message: 'User deleted successfully' }
+
+Step 3: Effects
+  → User can no longer log in (Firebase Auth record gone)
+  → Outstanding_Remainder records assigned to this user remain (no cascade delete)
+  → Ledger_logs entries created by this user remain (audit trail preserved)
+  → updatedByUserId references in those docs become "orphaned" but do not break queries
+```
+
+---
+
 ## 15. Deployment
 
 ### Firebase App Hosting
@@ -3176,10 +3332,10 @@ run:
 
 runConfig:
   cpu: 1
-  memory: 512Mi
-  minInstances: 0        # scales to zero when idle
-  maxInstances: 30
-  concurrency: 60        # requests per instance before scaling
+  memory: 1GiB           # upgraded from 512Mi for large Excel uploads
+  minInstances: 0        # scales to zero when idle (cold starts possible)
+  maxInstances: 60       # upgraded from 30
+  concurrency: 30        # requests per instance before scaling out
 ```
 
 ### Infrastructure
@@ -3195,7 +3351,7 @@ runConfig:
 
 ### Session Cache Caveat
 
-The in-memory session cache (`backend/utils/sessionCache.js`) is a plain JavaScript Map. With `minInstances: 0` (scale to zero) and `maxInstances: 30`, multiple instances may run simultaneously and each has its own cache. **In multi-instance deployments, a user's session may fail on requests that hit a different instance.** For production scale, replace with a shared Redis instance or Firebase Firestore-backed session store.
+The in-memory session cache (`backend/utils/sessionCache.js`) is a plain JavaScript Map. With `minInstances: 0` (scale to zero) and `maxInstances: 60`, multiple instances may run simultaneously and each has its own cache. **In multi-instance deployments, a user's session may fail on requests that hit a different instance.** For production scale, replace with a shared Redis instance or Firebase Firestore-backed session store.
 
 ### Build Pipeline
 
@@ -3241,4 +3397,127 @@ node backend/server.js starts
 
 ---
 
+## 17. Runtime Configuration & Performance
+
+### What Each `runConfig` Field Does
+
+The `runConfig` block in `apphosting.yaml` controls the Cloud Run container that Firebase App Hosting deploys.
+
+```
+FIELD            VALUE    EFFECT
+──────────────────────────────────────────────────────────────────
+cpu              1        vCPUs allocated per container instance.
+                          Node.js is single-threaded — 1 CPU is
+                          normal. Increase only for CPU-heavy work
+                          (large Excel parsing under concurrent load).
+
+memory           1GiB     RAM per instance. Matters for:
+                          • In-memory Excel parsing (large files)
+                          • NodeCache session store size
+                          • Firestore batch fetch buffers
+                          Insufficient memory → OOM → container restart.
+
+minInstances     0        Minimum always-running containers.
+                          0 = "scale to zero" — NO cost when idle.
+                          ⚠ COLD START: first request after an idle
+                            period takes ~1–3 extra seconds while a
+                            new container boots.
+                          Set to 1 to eliminate cold starts (adds
+                          ~$5–10/month on Cloud Run pricing).
+
+maxInstances     60       Hard ceiling on parallel containers.
+                          Does NOT affect single-user latency.
+                          Protects against runaway costs under DDoS
+                          or unexpected traffic spikes.
+
+concurrency      30       Requests one container handles simultaneously
+                          before Cloud Run spins up another instance.
+                          Node.js handles I/O-bound work (Firestore
+                          queries) concurrently — 30 is a safe value.
+                          Too high → memory pressure per instance.
+                          Too low → unnecessary cold starts under load.
+```
+
+### Speed Impact Summary
+
+| Scenario | Speed Impact | Cause |
+|---|---|---|
+| First request of the day / after idle | +1–3 sec delay | Cold start (minInstances: 0) |
+| Subsequent requests | Normal (< 200ms typical) | Warm container reused |
+| 31+ concurrent users | New instance spins up | Concurrency limit reached |
+| Large Excel upload (> 5 MB) | May be slower on low memory | Parsing in-memory buffer |
+
+**The only field that visibly affects perceived speed for normal usage is `minInstances: 0`.**
+To remove cold starts: set `minInstances: 1` in `apphosting.yaml` and redeploy.
+
+---
+
+### How to Verify the Deployed Config in Google Cloud
+
+#### Option A — Cloud Console (visual)
+
+```
+1. Open: https://console.cloud.google.com/run
+2. Select project: i-services-crm
+3. Find the App Hosting service (name contains "i-services-crm")
+4. Click "Edit & Deploy New Revision"
+   → Capacity section: shows CPU, Memory, Min/Max instances, Concurrency
+   → These values reflect the LIVE deployed revision
+5. Click "Metrics" tab
+   → "Request latency" (p50/p99) — normal vs cold start latency
+   → "Container instance count" — spikes from 0→1 = cold starts
+   → "CPU utilization" — if consistently > 80% → consider cpu: 2
+   → "Memory utilization" — if > 80% → consider increasing memory
+```
+
+#### Option B — gcloud CLI
+
+```bash
+# Find the service name (Firebase App Hosting uses a generated name)
+gcloud run services list --project=i-services-crm --region=asia-southeast1
+
+# Inspect the live revision config
+gcloud run services describe SERVICE_NAME \
+  --project=i-services-crm \
+  --region=asia-southeast1 \
+  --format="yaml(spec.template.spec.containerConcurrency, \
+                  spec.template.spec.containers[0].resources)"
+
+# Check min/max instances on the current revision
+gcloud run services describe SERVICE_NAME \
+  --project=i-services-crm \
+  --region=asia-southeast1 \
+  --format="yaml(spec.template.metadata.annotations)"
+  # Look for: autoscaling.knative.dev/minScale and autoscaling.knative.dev/maxScale
+
+# Watch live instance count (poll every 10s)
+watch -n10 "gcloud run services describe SERVICE_NAME \
+  --project=i-services-crm --region=asia-southeast1 \
+  --format='value(status.observedGeneration)'"
+```
+
+#### Option C — Firebase Console
+
+```
+1. Open: https://console.firebase.google.com
+2. Select project: i-services-crm
+3. App Hosting → your backend → "View build history"
+4. Click the latest successful build → "View run details"
+   → Opens Cloud Run console for that specific revision
+```
+
+---
+
+### Checklist: Confirm apphosting.yaml Values Are Live
+
+After any change to `apphosting.yaml`, push to GitHub — Firebase App Hosting
+auto-deploys on push. Then verify:
+
+```
+☐ gcloud run services describe → memory matches 1GiB
+☐ gcloud run services describe → concurrency = 30
+☐ gcloud run services describe → maxScale annotation = 60
+☐ Cloud Run Metrics → no OOM errors in logs
+☐ Cloud Run Logs → search "Starting server" to confirm cold start count
+```
 

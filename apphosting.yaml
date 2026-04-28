@@ -14,9 +14,9 @@ run:
 
 # Runtime configuration
 runConfig:
-  cpu: 1       
+  cpu: 2
   memory: 1GiB
-  minInstances: 0
+  minInstances: 1
   maxInstances: 60
   concurrency: 30
 
