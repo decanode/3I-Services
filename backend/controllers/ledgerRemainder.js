@@ -97,20 +97,26 @@ exports.update = async (req, res) => {
       updateData[`cemail${i}`] = null;
     }
 
-    // Role enforcement: non-admins cannot modify already-occupied customer slots
+    // Role enforcement: non-admins cannot modify already-occupied customer slots.
+    // NOTE: If a non-admin sends null/empty for a slot that already has data,
+    // we treat it as "not changing" — they are only updating comments/date, not customer fields.
     if (req.user.role !== 'admin') {
       const existing = (await ledgerRemainderService.getByLedgerId(ledger_id)) || {};
 
       for (let i = 1; i <= 3; i++) {
-        const incomingName  = req.body[`cname${i}`]  ? String(req.body[`cname${i}`]).trim()  : null;
-        const incomingMob   = req.body[`cmob${i}`]   ? String(req.body[`cmob${i}`]).trim()   : null;
-        const incomingEmail = req.body[`cemail${i}`] ? String(req.body[`cemail${i}`]).trim() : null;
-
         const existingName  = existing[`cname${i}`]  || null;
         const existingMob   = existing[`cmob${i}`]   || null;
         const existingEmail = existing[`cemail${i}`] || null;
 
         const slotOccupied = !!(existingName || existingMob || existingEmail);
+
+        // Only treat the incoming value as intentional if it was explicitly provided (non-null/non-empty).
+        // If the incoming field is null/empty and the slot is occupied, fall back to the existing value
+        // so that saving a comment alone doesn't falsely trigger the permission check.
+        const incomingName  = req.body[`cname${i}`]  ? String(req.body[`cname${i}`]).trim()  : existingName;
+        const incomingMob   = req.body[`cmob${i}`]   ? String(req.body[`cmob${i}`]).trim()   : existingMob;
+        const incomingEmail = req.body[`cemail${i}`] ? String(req.body[`cemail${i}`]).trim() : existingEmail;
+
         const slotChanging = (
           incomingName  !== existingName  ||
           incomingMob   !== existingMob   ||
